@@ -149,10 +149,62 @@ void test_real_game_move_generation() {
     // Check that all generated moves are valid words
     for (const auto& move : moves) {
         assert_true(dawg.contains(move.getWord()),
-                    "Generated word '" + move.getWord() + "' should be in dictionary");
+                    "Generated word '" + move.toString() + "' should be in dictionary");
     }
 
     cout << "  All generated moves are valid words" << endl;
+}
+
+void test_find_best_move() {
+    cout << "\n=== Test: Find best move ===" << endl;
+
+    Board board;
+    setup_real_game_board(board);
+
+    DAWG dawg;
+    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
+
+    // Rack: A I V O E Q I
+    Rack rack("AIVOEQI");
+    MoveGenerator gen(board, rack, dawg);
+
+    auto moves = gen.generateMoves();
+
+    cout << "  Generated " << moves.size() << " valid moves" << endl;
+    assert_true(moves.size() > 0, "Should generate at least some moves");
+
+    Scorer scorer;
+    int max_score = 0;
+    Move best_move;
+    Move qi_move;
+    bool found_qi = false;
+
+    for (auto& move : moves) {
+        int score = scorer.scoreMove(board, move);
+        move.setScore(score);
+
+        if (score > max_score) {
+            max_score = score;
+            best_move = move;
+        }
+
+        // Look for QI at 5D (vertical at row 3, col 4)
+        if (move.getWord() == "QI" &&
+            move.getStartRow() == 3 &&
+            move.getStartCol() == 4 &&
+            move.getDirection() == Direction::VERTICAL) {
+            qi_move = move;
+            found_qi = true;
+        }
+    }
+
+    cout << "  Best move found: " << best_move.toString() << endl;
+    assert_true(best_move.getWord() == "AVOIE", "AVOIE was found");
+    assert_true(best_move.getScore() == 32, "AVOIE is worth 32 points");
+
+    cout << "  QI move found: " << (found_qi ? qi_move.toString() : "NOT FOUND") << endl;
+    assert_true(found_qi, "QI at 5D should be generated");
+    assert_true(qi_move.getScore() == 26, "QI at 5D should score 26 points");
 }
 
 void test_real_game_specific_moves() {
@@ -208,6 +260,7 @@ int main() {
     test_real_game_board_setup();
     test_real_game_move_generation();
     test_real_game_specific_moves();
+    test_find_best_move();
 
     print_summary();
 

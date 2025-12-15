@@ -33,6 +33,10 @@ std::string Move::toString() const {
         ss << (start_col_ + 1) << row_labels[start_row_];
     }
 
+    // Also show internal coordinates for debugging
+    ss << " (" << start_row_ << "," << start_col_ << " "
+       << (direction_ == Direction::HORIZONTAL ? "H" : "V") << ")";
+
     ss << " [" << score_ << " pts]";
     return ss.str();
 }

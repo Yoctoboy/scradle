@@ -136,32 +136,20 @@ set<char> MoveGenerator::computeCrossChecks(int row, int col, Direction main_dir
         return checks;
     }
 
-    // Find which letters form valid words when inserted
+    // Find which letters form valid words when placed at the anchor
     for (char c = 'A'; c <= 'Z'; ++c) {
-        // Insert letter at the anchor position
+        // Replace the placeholder in cross_word with the test letter
         string test_word = cross_word;
 
-        // Find where to insert (the anchor position in cross_word)
-        // The cross_word includes letters before and after the anchor
-        int insert_pos = 0;
-
-        if (main_dir == Direction::HORIZONTAL) {
-            // Count letters above the anchor
-            int r = row - 1;
-            while (r >= 0 && !board_.isEmpty(r, col)) {
-                insert_pos++;
-                r--;
-            }
-        } else {
-            // Count letters to the left of the anchor
-            int c_idx = col - 1;
-            while (c_idx >= 0 && !board_.isEmpty(row, c_idx)) {
-                insert_pos++;
-                c_idx--;
-            }
+        // Find the placeholder position (where the anchor is in the cross_word)
+        size_t placeholder_pos = test_word.find('_');
+        if (placeholder_pos == string::npos) {
+            // This shouldn't happen, but handle it gracefully
+            continue;
         }
 
-        test_word.insert(insert_pos, 1, c);
+        // Replace the placeholder with the test letter
+        test_word[placeholder_pos] = c;
 
         if (dawg_.contains(test_word)) {
             checks.insert(c);
@@ -228,16 +216,48 @@ string MoveGenerator::getCrossWord(int row, int col, Direction main_dir) {
 }
 
 void MoveGenerator::extendLeft(const Anchor& anchor, Direction dir, vector<Move>& moves) {
-    // If there's a tile to the left/above of anchor, we can't extend left
+    // If there's a tile to the left/above of anchor, we must start from there
     int prev_row = anchor.row, prev_col = anchor.col;
     getPrev(prev_row, prev_col, dir);
 
     if (board_.isValidPosition(prev_row, prev_col) && !board_.isEmpty(prev_row, prev_col)) {
-        // Can't extend left, start at anchor
-        extendRight(dawg_.getRoot(), "", anchor.row, anchor.col, dir, rack_, moves, false);
+        // There are existing tiles before the anchor - we must include them
+        // Find the actual start of the word
+        int start_row = anchor.row, start_col = anchor.col;
+        while (true) {
+            int test_row = start_row, test_col = start_col;
+            getPrev(test_row, test_col, dir);
+            if (!board_.isValidPosition(test_row, test_col) || board_.isEmpty(test_row, test_col)) {
+                break;
+            }
+            start_row = test_row;
+            start_col = test_col;
+        }
+
+        // Build the prefix from existing tiles and traverse the DAWG
+        string prefix;
+        shared_ptr<DAWG::Node> node = dawg_.getRoot();
+        int curr_row = start_row, curr_col = start_col;
+
+        while ((curr_row != anchor.row || curr_col != anchor.col)) {
+            char letter = board_.getLetter(curr_row, curr_col);
+            char upper_letter = std::toupper(static_cast<unsigned char>(letter));
+            prefix += upper_letter;
+
+            auto it = node->children.find(upper_letter);
+            if (it == node->children.end()) {
+                // Existing tiles don't form a valid prefix - no moves possible
+                return;
+            }
+            node = it->second;
+
+            getNext(curr_row, curr_col, dir);
+        }
+
+        // Now continue from the anchor position with the DAWG node reached so far
+        extendRight(node, prefix, anchor.row, anchor.col, dir, rack_, moves, false);
     } else {
-        // Try all possible left extensions up to max_left_extension
-        // For now, simplified: just start at anchor
+        // No tiles before anchor - start fresh from anchor
         extendRight(dawg_.getRoot(), "", anchor.row, anchor.col, dir, rack_, moves, false);
     }
 }
@@ -310,6 +330,9 @@ void MoveGenerator::extendRight(
         moves.push_back(move);
     }
 
+    // Compute cross-checks for this empty position
+    set<char> cross_checks = computeCrossChecks(row, col, dir);
+
     // Try placing each available tile from the rack
     for (int i = 0; i < temp_rack.size(); ++i) {
         char tile = temp_rack.getTile(i);
@@ -319,6 +342,11 @@ void MoveGenerator::extendRight(
             for (char letter = 'A'; letter <= 'Z'; ++letter) {
                 auto it = node->children.find(letter);
                 if (it == node->children.end()) {
+                    continue;
+                }
+
+                // Check if this letter passes cross-check validation
+                if (cross_checks.find(letter) == cross_checks.end()) {
                     continue;
                 }
 
@@ -341,6 +369,11 @@ void MoveGenerator::extendRight(
             // Regular tile
             auto it = node->children.find(tile);
             if (it == node->children.end()) {
+                continue;
+            }
+
+            // Check if this letter passes cross-check validation
+            if (cross_checks.find(tile) == cross_checks.end()) {
                 continue;
             }
 
