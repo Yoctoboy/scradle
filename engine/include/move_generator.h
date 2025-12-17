@@ -60,6 +60,18 @@ private:
         std::vector<int> blank_positions = std::vector<int>()
     );
 
+    void extendRightWithAnchor(
+        const std::shared_ptr<DAWG::Node>& node,
+        const std::string& partial_word,
+        int row, int col,
+        Direction dir,
+        Rack temp_rack,
+        std::vector<Move>& moves,
+        bool anchor_placed,
+        int anchor_row, int anchor_col,
+        std::vector<int> blank_positions
+    );
+
     void extendLeft(
         const Anchor& anchor,
         Direction dir,

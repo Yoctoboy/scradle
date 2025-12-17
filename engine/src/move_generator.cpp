@@ -257,8 +257,22 @@ void MoveGenerator::extendLeft(const Anchor& anchor, Direction dir, vector<Move>
         // Now continue from the anchor position with the DAWG node reached so far
         extendRight(node, prefix, anchor.row, anchor.col, dir, rack_, moves, false);
     } else {
-        // No tiles before anchor - start fresh from anchor
+        // No existing tiles before anchor
+        // Try starting at the anchor
         extendRight(dawg_.getRoot(), "", anchor.row, anchor.col, dir, rack_, moves, false);
+
+        // Also try starting before the anchor (left extension)
+        // This allows moves like QI where Q is placed before the anchor
+        for (int ext = 1; ext <= anchor.max_left_extension; ++ext) {
+            int start_row = anchor.row, start_col = anchor.col;
+            for (int i = 0; i < ext; ++i) {
+                getPrev(start_row, start_col, dir);
+            }
+            if (!board_.isValidPosition(start_row, start_col)) {
+                break;
+            }
+            extendRight(dawg_.getRoot(), "", start_row, start_col, dir, rack_, moves, false);
+        }
     }
 }
 
