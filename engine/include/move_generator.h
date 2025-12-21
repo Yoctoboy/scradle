@@ -45,6 +45,11 @@ public:
     // Step 2: Generate all possible raw moves (exposed for testing)
     std::vector<RawMove> generateAllRawMoves(const std::vector<StartPosition>& positions) const;
 
+    // Step 3 helpers (exposed for testing)
+    std::string getMainWord(const RawMove& raw_move) const;
+    std::vector<std::string> getCrossWords(const RawMove& raw_move) const;
+    bool isValidMove(const RawMove& raw_move) const;
+
 private:
     const Board& board_;
     const Rack& rack_;
@@ -83,15 +88,6 @@ private:
 
     // Step 3: Validate moves
     std::vector<Move> filterValidMoves(const std::vector<RawMove>& raw_moves) const;
-
-    // Helper: Check if a raw move forms valid words
-    bool isValidMove(const RawMove& raw_move, std::string& main_word) const;
-
-    // Helper: Get the complete main word from a raw move
-    std::string getMainWord(const RawMove& raw_move) const;
-
-    // Helper: Get all cross-words formed by new tiles
-    std::vector<std::string> getCrossWords(const RawMove& raw_move) const;
 
     // Helper: Convert RawMove to Move
     Move rawMoveToMove(const RawMove& raw_move, const std::string& word) const;

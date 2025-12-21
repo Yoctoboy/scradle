@@ -243,28 +243,197 @@ RawMove MoveGenerator::createRawMove(
 
 vector<Move> MoveGenerator::filterValidMoves(const vector<RawMove>& raw_moves) const {
     vector<Move> valid_moves;
-    // TODO: Implement in Step 3
+
+    for (const auto& raw_move : raw_moves) {
+        // Validate the move
+        if (isValidMove(raw_move)) {
+            // Get the main word for the move
+            string main_word = getMainWord(raw_move);
+
+            // Convert to Move and add to valid moves
+            Move move = rawMoveToMove(raw_move, main_word);
+            valid_moves.push_back(move);
+        }
+    }
+
     return valid_moves;
 }
 
-bool MoveGenerator::isValidMove(const RawMove& raw_move, string& main_word) const {
-    // TODO: Implement in Step 3
-    return false;
+bool MoveGenerator::isValidMove(const RawMove& raw_move) const {
+    if (raw_move.placements.empty()) {
+        return false;
+    }
+
+    // Get the main word
+    string main_word = getMainWord(raw_move);
+    if (main_word.length() < 2) {
+        return false;  // Words must be at least 2 letters
+    }
+
+    // Validate main word in DAWG
+    if (!dawg_.contains(main_word)) {
+        return false;
+    }
+
+    // Get all cross-words
+    vector<string> cross_words = getCrossWords(raw_move);
+
+    // Validate all cross-words
+    for (const auto& cross_word : cross_words) {
+        if (!dawg_.contains(cross_word)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 string MoveGenerator::getMainWord(const RawMove& raw_move) const {
-    // TODO: Implement in Step 3
-    return "";
+    if (raw_move.placements.empty()) {
+        return "";
+    }
+
+    Direction dir = raw_move.direction;
+
+    // Find the actual start of the word by walking backward from start position
+    int word_start_row = raw_move.start_row;
+    int word_start_col = raw_move.start_col;
+
+    int prev_row = word_start_row;
+    int prev_col = word_start_col;
+    getPrev(prev_row, prev_col, dir);
+
+    while (prev_row >= 0 && prev_col >= 0 && prev_row <= 14 && prev_col <= 14 &&
+           !board_.isEmpty(prev_row, prev_col)) {
+        word_start_row = prev_row;
+        word_start_col = prev_col;
+        getPrev(prev_row, prev_col, dir);
+    }
+
+    // Now walk forward from the actual start, collecting all letters
+    string word = "";
+    int row = word_start_row;
+    int col = word_start_col;
+
+    while (row >= 0 && col >= 0 && row <= 14 && col <= 14) {
+        if (!board_.isEmpty(row, col)) {
+            // Existing tile on board
+            word += board_.getLetter(row, col);
+        } else {
+            // Check if we placed a tile here
+            bool found = false;
+            for (const auto& placement : raw_move.placements) {
+                if (placement.row == row && placement.col == col) {
+                    word += placement.letter;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                break;  // No tile here, end of word
+            }
+        }
+        getNext(row, col, dir);
+    }
+
+    return word;
 }
 
 vector<string> MoveGenerator::getCrossWords(const RawMove& raw_move) const {
-    // TODO: Implement in Step 3
-    return vector<string>();
+    vector<string> cross_words;
+
+    // For each newly placed tile, check for cross-words in the perpendicular direction
+    Direction perp_dir = (raw_move.direction == Direction::HORIZONTAL) ? Direction::VERTICAL : Direction::HORIZONTAL;
+
+    for (const auto& placement : raw_move.placements) {
+        int row = placement.row;
+        int col = placement.col;
+
+        // Check if there are tiles adjacent in the perpendicular direction
+        int prev_row = row;
+        int prev_col = col;
+        getPrev(prev_row, prev_col, perp_dir);
+
+        int next_row = row;
+        int next_col = col;
+        getNext(next_row, next_col, perp_dir);
+
+        bool has_prev = (prev_row >= 0 && prev_col >= 0 && prev_row <= 14 && prev_col <= 14 &&
+                        !board_.isEmpty(prev_row, prev_col));
+        bool has_next = (next_row >= 0 && next_col >= 0 && next_row <= 14 && next_col <= 14 &&
+                        !board_.isEmpty(next_row, next_col));
+
+        if (!has_prev && !has_next) {
+            // No cross-word formed by this tile
+            continue;
+        }
+
+        // Find the start of the cross-word
+        int word_start_row = row;
+        int word_start_col = col;
+
+        prev_row = row;
+        prev_col = col;
+        getPrev(prev_row, prev_col, perp_dir);
+
+        while (prev_row >= 0 && prev_col >= 0 && prev_row <= 14 && prev_col <= 14 &&
+               !board_.isEmpty(prev_row, prev_col)) {
+            word_start_row = prev_row;
+            word_start_col = prev_col;
+            getPrev(prev_row, prev_col, perp_dir);
+        }
+
+        // Collect the cross-word
+        string cross_word = "";
+        int curr_row = word_start_row;
+        int curr_col = word_start_col;
+
+        while (curr_row >= 0 && curr_col >= 0 && curr_row <= 14 && curr_col <= 14) {
+            if (!board_.isEmpty(curr_row, curr_col)) {
+                cross_word += board_.getLetter(curr_row, curr_col);
+            } else if (curr_row == row && curr_col == col) {
+                // This is the newly placed tile
+                cross_word += placement.letter;
+            } else {
+                break;
+            }
+            getNext(curr_row, curr_col, perp_dir);
+        }
+
+        if (cross_word.length() > 1) {
+            cross_words.push_back(cross_word);
+        }
+    }
+
+    return cross_words;
 }
 
 Move MoveGenerator::rawMoveToMove(const RawMove& raw_move, const string& word) const {
-    // TODO: Implement in Step 3
-    return Move();
+    // Find the actual start of the word (may be before start_row/start_col if there are existing tiles)
+    Direction dir = raw_move.direction;
+    int word_start_row = raw_move.start_row;
+    int word_start_col = raw_move.start_col;
+
+    int prev_row = word_start_row;
+    int prev_col = word_start_col;
+    getPrev(prev_row, prev_col, dir);
+
+    while (prev_row >= 0 && prev_col >= 0 && prev_row <= 14 && prev_col <= 14 &&
+           !board_.isEmpty(prev_row, prev_col)) {
+        word_start_row = prev_row;
+        word_start_col = prev_col;
+        getPrev(prev_row, prev_col, dir);
+    }
+
+    // Create the move
+    Move move(word_start_row, word_start_col, dir, word);
+
+    // Add all placements from the raw move
+    for (const auto& placement : raw_move.placements) {
+        move.addPlacement(placement);
+    }
+
+    return move;
 }
 
 // ============================================================================

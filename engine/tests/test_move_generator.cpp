@@ -452,6 +452,356 @@ void test_raw_moves_adjacency() {
     cout << "  All " << raw_moves.size() << " raw moves are properly adjacent" << endl;
 }
 
+void test_get_main_word() {
+    cout << "\n=== Test: Get Main Word ===" << endl;
+
+    Board board;
+    Rack rack("CAT");
+    DAWG dawg;
+
+    // Test 1: Empty board - place "CAT" horizontally at (7,7)
+    {
+        MoveGenerator generator(board, rack, dawg);
+        auto positions = generator.findStartPositions();
+        auto raw_moves = generator.generateAllRawMoves(positions);
+
+        // Find a move that places "CAT"
+        for (const auto& raw_move : raw_moves) {
+            if (raw_move.placements.size() == 3 &&
+                raw_move.start_row == 7 && raw_move.start_col == 7 &&
+                raw_move.direction == Direction::HORIZONTAL) {
+                // Check if this is "CAT"
+                if (raw_move.placements[0].letter == 'C' &&
+                    raw_move.placements[1].letter == 'A' &&
+                    raw_move.placements[2].letter == 'T') {
+                    string word = generator.getMainWord(raw_move);
+                    assert_equal(string("CAT"), word, "Main word should be CAT");
+                    break;
+                }
+            }
+        }
+    }
+
+    // Test 2: Board with existing tiles - extend a word
+    {
+        board.setLetter(7, 7, 'C');
+        board.setLetter(7, 8, 'A');
+
+        Rack rack2("T");
+        MoveGenerator generator2(board, rack2, dawg);
+
+        auto positions = generator2.findStartPositions();
+        auto raw_moves = generator2.generateAllRawMoves(positions);
+
+        // Find a move that extends "CA" to "CAT"
+        for (const auto& raw_move : raw_moves) {
+            if (raw_move.placements.size() == 1 &&
+                raw_move.start_row == 7 && raw_move.start_col == 9 &&
+                raw_move.direction == Direction::HORIZONTAL &&
+                raw_move.placements[0].letter == 'T') {
+                string word = generator2.getMainWord(raw_move);
+                assert_equal(string("CAT"), word, "Main word should extend CA to CAT");
+                break;
+            }
+        }
+    }
+
+    cout << "  getMainWord() working correctly" << endl;
+}
+
+void test_get_cross_words() {
+    cout << "\n=== Test: Get Cross Words ===" << endl;
+
+    Board board;
+    Rack rack("ART");
+    DAWG dawg;
+
+    // Build DAWG with test words
+    vector<string> test_words = {"CAT", "ARM", "RAT"};
+    dawg.build(test_words);
+
+    // Place only "C" and "T" horizontally (leaving gap for "A")
+    board.setLetter(7, 7, 'C');
+    board.setLetter(7, 9, 'T');
+    // Then place "A" and "M" (leaving gap for "R" for form ARM)
+    board.setLetter(6, 7, 'A');
+    board.setLetter(6, 9, 'M');
+    // Board looks like
+    // row 6 .......A.M.....
+    // row 7 .......C.T.....
+
+    // Now place "RAT" vertically at (6,8) to form:
+    //   ARM  (where R is newly placed)
+    //   CAT  (where A is newly placed)
+    //    T
+    // This should create cross-words "ARM" and "CAT"
+
+    MoveGenerator generator(board, rack, dawg);
+    auto positions = generator.findStartPositions();
+    auto raw_moves = generator.generateAllRawMoves(positions);
+
+    // Find a move that places "R" at (6,8) and "A" at (7,8) vertically with other tiles
+    bool found_test_CAT = false;
+    bool found_test_ARM = false;
+    bool found_valid_RAT_move = false;
+
+    for (const auto& raw_move : raw_moves) {
+        if (raw_move.direction == Direction::VERTICAL && raw_move.start_col == 8 && raw_move.start_row == 6 && raw_move.placements.size() == 3) {
+            // Check if one of the placements is 'A' at (7,8) and 'R' at (6,8)
+            bool has_r_at_6_8 = false;
+            bool has_a_at_7_8 = false;
+            bool has_t_at_8_8 = false;
+            for (const auto& p : raw_move.placements) {
+                if (p.row == 6 && p.col == 8 && p.letter == 'R') {
+                    has_r_at_6_8 = true;
+                }
+                if (p.row == 7 && p.col == 8 && p.letter == 'A') {
+                    has_a_at_7_8 = true;
+                }
+                if (p.row == 8 && p.col == 8 && p.letter == 'T') {
+                    has_t_at_8_8 = true;
+                }
+            }
+
+            if (has_a_at_7_8 && has_r_at_6_8 && has_t_at_8_8) {
+                vector<string> cross_words = generator.getCrossWords(raw_move);
+                // The newly placed 'A' should form cross-word "CAT"
+                for (const auto& cw : cross_words) {
+                    if (cw == "CAT") {
+                        found_test_CAT = true;
+                    }
+                    if (cw == "ARM") {
+                        found_test_ARM = true;
+                    }
+                }
+
+                if (found_test_ARM && found_test_CAT) {
+                    // Successfully found both cross-words
+                    found_valid_RAT_move = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    assert_true(found_test_CAT, "Should find cross-word CAT");
+    assert_true(found_test_ARM, "Should find cross-word ARM");
+    assert_true(found_valid_RAT_move, "Raw move should be valid");
+}
+
+void test_get_cross_words_with_blank() {
+    cout << "\n=== Test: Get Cross Words ===" << endl;
+
+    Board board;
+    Rack rack("A?T");
+    DAWG dawg;
+
+    // Build DAWG with test words
+    vector<string> test_words = {"CAT", "ARM", "RAT"};
+    dawg.build(test_words);
+
+    // Place only "C" and "T" horizontally (leaving gap for "A")
+    board.setLetter(7, 7, 'C');
+    board.setLetter(7, 9, 'T');
+    // Then place "A" and "M" (leaving gap for "R" for form ARM)
+    board.setLetter(6, 7, 'A');
+    board.setLetter(6, 9, 'M');
+    // Board looks like
+    // row 6 .......A.M.....
+    // row 7 .......C.T.....
+
+    // Now place "RAT" vertically at (6,8) to form:
+    //   ARM  (where R is newly placed)
+    //   CAT  (where A is newly placed)
+    //    T
+    // This should create cross-words "ARM" and "CAT"
+
+    MoveGenerator generator(board, rack, dawg);
+    auto positions = generator.findStartPositions();
+    auto raw_moves = generator.generateAllRawMoves(positions);
+
+    // Find a move that places "R" at (6,8) and "A" at (7,8) vertically with other tiles
+    bool found_test_CAT = false;
+    bool found_test_ARM = false;
+    bool found_valid_RAT_move = false;
+
+    for (const auto& raw_move : raw_moves) {
+        if (raw_move.direction == Direction::VERTICAL && raw_move.start_col == 8 && raw_move.start_row == 6 && raw_move.placements.size() == 3) {
+            // Check if one of the placements is 'A' at (7,8) and 'R' at (6,8)
+            bool has_r_at_6_8 = false;
+            bool has_a_at_7_8 = false;
+            bool has_t_at_8_8 = false;
+            for (const auto& p : raw_move.placements) {
+                if (p.row == 6 && p.col == 8 && p.letter == 'R') {
+                    has_r_at_6_8 = true;
+                }
+                if (p.row == 7 && p.col == 8 && p.letter == 'A') {
+                    has_a_at_7_8 = true;
+                }
+                if (p.row == 8 && p.col == 8 && p.letter == 'T') {
+                    has_t_at_8_8 = true;
+                }
+            }
+
+            if (has_a_at_7_8 && has_r_at_6_8 && has_t_at_8_8) {
+                vector<string> cross_words = generator.getCrossWords(raw_move);
+                // The newly placed 'A' should form cross-word "CAT"
+                for (const auto& cw : cross_words) {
+                    if (cw == "CAT") {
+                        found_test_CAT = true;
+                    }
+                    if (cw == "ARM") {
+                        found_test_ARM = true;
+                    }
+                }
+
+                if (found_test_ARM && found_test_CAT) {
+                    // Successfully found both cross-words
+                    found_valid_RAT_move = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    assert_true(found_test_CAT, "Should find cross-word CAT");
+    assert_true(found_test_ARM, "Should find cross-word ARM");
+    assert_true(found_valid_RAT_move, "Raw move should be valid");
+}
+
+void test_is_valid_move_main_word() {
+    cout << "\n=== Test: isValidMove - Main Word Validation ===" << endl;
+
+    Board board;
+    Rack rack("CAT");
+    DAWG dawg;
+
+    // Build DAWG with only "CAT"
+    vector<string> test_words = {"CAT"};
+    dawg.build(test_words);
+
+    MoveGenerator generator(board, rack, dawg);
+    auto positions = generator.findStartPositions();
+    auto raw_moves = generator.generateAllRawMoves(positions);
+
+    int valid_count = 0;
+    int invalid_count = 0;
+
+    for (const auto& raw_move : raw_moves) {
+        string main_word = generator.getMainWord(raw_move);
+        bool is_valid = generator.isValidMove(raw_move);
+
+        if (is_valid) {
+            valid_count++;
+            assert_equal(string("CAT"), main_word, "Valid move should be CAT");
+        } else {
+            invalid_count++;
+            assert_true(main_word != "CAT", "Invalid move should not be CAT");
+        }
+    }
+
+    assert_true(valid_count > 0, "Should find at least one valid move (CAT)");
+    assert_true(invalid_count > 0, "Should find invalid moves (non-CAT words)");
+    cout << "  Found " << valid_count << " valid moves, " << invalid_count << " invalid moves" << endl;
+}
+
+void test_is_valid_move_cross_words() {
+    cout << "\n=== Test: isValidMove - Cross Word Validation ===" << endl;
+
+    Board board;
+    Rack rack("ART");
+    DAWG dawg;
+
+    // Build DAWG with main word but missing one cross-word
+    vector<string> test_words = {"RAT", "CAT"};  // Missing "ARM"
+    dawg.build(test_words);
+
+    // Setup board: C_T and A_M (missing R in both)
+    board.setLetter(7, 7, 'C');
+    board.setLetter(7, 9, 'T');
+    board.setLetter(6, 7, 'A');
+    board.setLetter(6, 9, 'M');
+
+    MoveGenerator generator(board, rack, dawg);
+    auto positions = generator.findStartPositions();
+    auto raw_moves = generator.generateAllRawMoves(positions);
+
+    // Look for the RAT move (should be invalid because ARM cross-word is not in DAWG)
+    bool found_rat_move = false;
+    for (const auto& raw_move : raw_moves) {
+        string main_word = generator.getMainWord(raw_move);
+        if (main_word == "RAT" && raw_move.placements.size() == 3) {
+            vector<string> cross_words = generator.getCrossWords(raw_move);
+
+            // Should have ARM and CAT as cross-words
+            bool has_arm = false;
+            bool has_cat = false;
+            for (const auto& cw : cross_words) {
+                if (cw == "ARM") has_arm = true;
+                if (cw == "CAT") has_cat = true;
+            }
+
+            if (has_arm && has_cat) {
+                // This is the move we're testing - should be invalid because ARM is not in DAWG
+                found_rat_move = true;
+                bool is_valid = generator.isValidMove(raw_move);
+                assert_false(is_valid, "RAT move should be invalid (ARM not in DAWG)");
+                break;
+            }
+        }
+    }
+
+    assert_true(found_rat_move, "Should find RAT move to test");
+}
+
+void test_is_valid_move_all_valid() {
+    cout << "\n=== Test: isValidMove - All Words Valid ===" << endl;
+
+    Board board;
+    Rack rack("ART");
+    DAWG dawg;
+
+    // Build DAWG with all necessary words
+    vector<string> test_words = {"RAT", "CAT", "ARM"};
+    dawg.build(test_words);
+
+    // Setup board: C_T and A_M (will form CAT and ARM cross-words with RAT)
+    board.setLetter(7, 7, 'C');
+    board.setLetter(7, 9, 'T');
+    board.setLetter(6, 7, 'A');
+    board.setLetter(6, 9, 'M');
+
+    MoveGenerator generator(board, rack, dawg);
+    auto positions = generator.findStartPositions();
+    auto raw_moves = generator.generateAllRawMoves(positions);
+
+    // Look for the RAT move (should be valid now)
+    bool found_valid_rat = false;
+    for (const auto& raw_move : raw_moves) {
+        string main_word = generator.getMainWord(raw_move);
+        if (main_word == "RAT" && raw_move.placements.size() == 3) {
+            vector<string> cross_words = generator.getCrossWords(raw_move);
+
+            bool has_arm = false;
+            bool has_cat = false;
+            for (const auto& cw : cross_words) {
+                if (cw == "ARM") has_arm = true;
+                if (cw == "CAT") has_cat = true;
+            }
+
+            if (has_arm && has_cat) {
+                bool is_valid = generator.isValidMove(raw_move);
+                if (is_valid) {
+                    found_valid_rat = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    assert_true(found_valid_rat, "RAT move should be valid (all words in DAWG)");
+}
+
 void test_word_validation() {
     cout << "\n=== Test: Word Validation (Only Valid Words) ===" << endl;
 
@@ -497,6 +847,13 @@ int main() {
     test_raw_moves_rack_constraint();
     test_raw_moves_blank_expansion();
     test_raw_moves_adjacency();
+
+    // Step 3 tests (validation helpers)
+    test_get_main_word();
+    test_get_cross_words();
+    test_is_valid_move_main_word();
+    test_is_valid_move_cross_words();
+    test_is_valid_move_all_valid();
 
     // Integration tests (Steps 1-3)
     test_anchor_identification_with_tiles();
