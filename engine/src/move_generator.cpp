@@ -469,14 +469,6 @@ vector<Move> MoveGenerator::filterValidMoves(const vector<RawMove>& raw_moves) c
             // Convert to Move and add to valid moves
             Move move = rawMoveToMove(raw_move, main_word);
 
-            // Debug: Log QUARRE moves
-            if (main_word == "QUARRE") {
-                std::cerr << "Valid QUARRE move created: StartPos(" << raw_move.start_row << ","
-                          << raw_move.start_col << " "
-                          << (raw_move.direction == Direction::HORIZONTAL ? "H" : "V")
-                          << ") -> Final move: " << move.toString() << std::endl;
-            }
-
             valid_moves.push_back(move);
         }
     }

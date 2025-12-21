@@ -1,9 +1,13 @@
 #ifndef SCRADLE_TEST_FRAMEWORK_H
 #define SCRADLE_TEST_FRAMEWORK_H
 
+#include <algorithm>
+#include <chrono>
+#include <climits>
 #include <exception>
 #include <iostream>
 #include <sstream>
+#include <streambuf>
 #include <string>
 
 using std::cout;
@@ -90,6 +94,48 @@ inline int exit_code() {
     return tests_failed == 0 ? 0 : 1;
 }
 
+// Helper macro to time a test function (runs 10 times, shows min/max/avg)
+#define TIME_TEST(name, test_func)                                                                                     \
+    do {                                                                                                               \
+        const int NUM_RUNS = 10;                                                                                       \
+        long long min_time = LLONG_MAX;                                                                                \
+        long long max_time = 0;                                                                                        \
+        long long total_time = 0;                                                                                      \
+        std::cout << endl                                                                                              \
+                  << "=== Timing test: " << name << " ===" << std::endl;                                               \
+        for (int run = 0; run < NUM_RUNS; run++) {                                                                     \
+            auto start = std::chrono::high_resolution_clock::now();                                                    \
+            {                                                                                                          \
+                CoutSilencer silence;                                                                                  \
+                test_func();                                                                                           \
+            }                                                                                                          \
+            auto end = std::chrono::high_resolution_clock::now();                                                      \
+            long long duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();           \
+                                                                                                                       \
+            min_time = std::min(min_time, duration);                                                                   \
+            max_time = std::max(max_time, duration);                                                                   \
+            total_time += duration;                                                                                    \
+        }                                                                                                              \
+                                                                                                                       \
+        long long avg_time = total_time / NUM_RUNS;                                                                    \
+        cout << "  [⏱️  min: " << min_time << " ms | avg: " << avg_time << " ms | max: " << max_time << " ms]" << endl; \
+    } while (0)
+
 }  // namespace test
+
+class CoutSilencer {
+   public:
+    CoutSilencer() : old_buf(std::cout.rdbuf()) {
+        std::cout.rdbuf(null_stream.rdbuf());
+    }
+
+    ~CoutSilencer() {
+        std::cout.rdbuf(old_buf);
+    }
+
+   private:
+    std::streambuf* old_buf;
+    std::ostringstream null_stream;
+};
 
 #endif  // SCRADLE_TEST_FRAMEWORK_H

@@ -229,11 +229,11 @@ int main() {
     cout << "=== Scradle Engine - Complex Board Tests ===" << endl;
 
     test_board_parser();
-    test_example_board();
-    test_board_scenario_1();
-    test_board_scenario_2();
-    test_board_scenario_3();
-    test_board_scenario_4();
+    TIME_TEST("test_example_board", test_example_board);
+    TIME_TEST("test_board_scenario_1", test_board_scenario_1);
+    TIME_TEST("test_board_scenario_2", test_board_scenario_2);
+    TIME_TEST("test_board_scenario_3", test_board_scenario_3);
+    TIME_TEST("test_board_scenario_4", test_board_scenario_4);
 
     print_summary();
 
