@@ -308,7 +308,7 @@ void test_raw_moves_basic() {
 
     // All raw moves should have at least one placement
     for (const auto& raw_move : raw_moves) {
-        assert_true(raw_move.placements.size() > 0, "Raw move should have placements");
+        assert_true(raw_move.placements.size() > 0, "Raw move should have placements", false);
     }
 
     cout << "  Generated " << raw_moves.size() << " raw moves" << endl;
@@ -446,7 +446,7 @@ void test_raw_moves_adjacency() {
             }
         }
 
-        assert_true(is_adjacent, "Raw move should be adjacent to existing tile");
+        assert_true(is_adjacent, "Raw move should be adjacent to existing tile", false);
     }
 
     cout << "  All " << raw_moves.size() << " raw moves are properly adjacent" << endl;
