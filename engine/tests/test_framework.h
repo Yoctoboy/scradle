@@ -1,28 +1,28 @@
 #ifndef SCRADLE_TEST_FRAMEWORK_H
 #define SCRADLE_TEST_FRAMEWORK_H
 
-#include <iostream>
-#include <string>
-#include <sstream>
 #include <exception>
+#include <iostream>
+#include <sstream>
+#include <string>
 
-using std::string;
 using std::cout;
 using std::endl;
+using std::string;
 
 namespace test {
 
 // ANSI color codes
 namespace color {
-    const string RESET   = "\033[0m";
-    const string RED     = "\033[31m";
-    const string GREEN   = "\033[32m";
-    const string YELLOW  = "\033[33m";
-    const string BLUE    = "\033[34m";
-    const string MAGENTA = "\033[35m";
-    const string CYAN    = "\033[36m";
-    const string BOLD    = "\033[1m";
-}
+const string RESET = "\033[0m";
+const string RED = "\033[31m";
+const string GREEN = "\033[32m";
+const string YELLOW = "\033[33m";
+const string BLUE = "\033[34m";
+const string MAGENTA = "\033[35m";
+const string CYAN = "\033[36m";
+const string BOLD = "\033[1m";
+}  // namespace color
 
 // Test statistics
 static int tests_run = 0;
@@ -30,38 +30,32 @@ static int tests_passed = 0;
 static int tests_failed = 0;
 
 // Assert that condition is true
-inline void assert_true(bool condition, const string& test_name, const string& message = "") {
+inline void assert_true(bool condition, const string& test_name, const bool display_on_success = true) {
     tests_run++;
     if (condition) {
         tests_passed++;
-        cout << color::GREEN << "  ✓ " << color::RESET << test_name << endl;
+        if (display_on_success) cout << color::GREEN << "  ✓ " << color::RESET << test_name << endl;
     } else {
         tests_failed++;
         cout << color::RED << "  ✗ " << test_name << " - FAILED" << color::RESET;
-        if (!message.empty()) {
-            cout << ": " << message;
-        }
         cout << endl;
     }
 }
 
-inline void assert_false(bool condition, const string& test_name, const string& message = "") {
+inline void assert_false(bool condition, const string& test_name, const bool display_on_success = true) {
     tests_run++;
     if (!condition) {
         tests_passed++;
-        cout << color::GREEN << "  ✓ " << color::RESET << test_name << endl;
+        if (display_on_success) cout << color::GREEN << "  ✓ " << color::RESET << test_name << endl;
     } else {
         tests_failed++;
         cout << color::RED << "  ✗ " << test_name << " - FAILED" << color::RESET;
-        if (!message.empty()) {
-            cout << ": " << message;
-        }
         cout << endl;
     }
 }
 
 // Assert that two values are equal
-template<typename T>
+template <typename T>
 inline void assert_equal(const T& expected, const T& actual, const string& test_name) {
     tests_run++;
     if (expected == actual) {
@@ -77,7 +71,8 @@ inline void assert_equal(const T& expected, const T& actual, const string& test_
 
 // Print test summary
 inline void print_summary() {
-    cout << "\n" << color::CYAN << "========================================" << color::RESET << endl;
+    cout << "\n"
+         << color::CYAN << "========================================" << color::RESET << endl;
     cout << color::BOLD << "Tests run:    " << color::RESET << tests_run << endl;
     cout << color::BOLD << "Tests passed: " << color::RESET << color::GREEN << tests_passed << color::RESET << endl;
     cout << color::BOLD << "Tests failed: " << color::RESET << (tests_failed > 0 ? color::RED : color::GREEN) << tests_failed << color::RESET << endl;
@@ -95,6 +90,6 @@ inline int exit_code() {
     return tests_failed == 0 ? 0 : 1;
 }
 
-} // namespace test
+}  // namespace test
 
-#endif // SCRADLE_TEST_FRAMEWORK_H
+#endif  // SCRADLE_TEST_FRAMEWORK_H

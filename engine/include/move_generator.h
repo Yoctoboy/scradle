@@ -42,13 +42,13 @@ public:
     // Step 1: Find all start positions (exposed for testing)
     std::vector<StartPosition> findStartPositions() const;
 
+    // Step 2: Generate all possible raw moves (exposed for testing)
+    std::vector<RawMove> generateAllRawMoves(const std::vector<StartPosition>& positions) const;
+
 private:
     const Board& board_;
     const Rack& rack_;
     const DAWG& dawg_;
-
-    // Step 2: Generate all possible raw moves
-    std::vector<RawMove> generateAllRawMoves(const std::vector<StartPosition>& positions) const;
 
     // Helper: Generate permutations of rack tiles
     void generatePermutations(
@@ -64,6 +64,14 @@ private:
         std::vector<bool>& used,
         int remaining,
         std::string& current,
+        std::vector<std::string>& result
+    ) const;
+
+    // Helper: Expand blank tiles ('?') to all possible letters
+    void expandBlanks(
+        const std::string& permutation,
+        size_t index,
+        std::string current,
         std::vector<std::string>& result
     ) const;
 

@@ -183,6 +183,29 @@ void MoveGenerator::generatePermutationsHelper(
     }
 }
 
+void MoveGenerator::expandBlanks(
+    const string& permutation,
+    size_t index,
+    string current,
+    vector<string>& result) const {
+    // Base case: reached the end of the permutation
+    if (index == permutation.size()) {
+        result.push_back(current);
+        return;
+    }
+
+    char c = permutation[index];
+    if (c == '?') {
+        // Blank tile - try all 26 letters (lowercase to mark as blank)
+        for (char letter = 'a'; letter <= 'z'; letter++) {
+            expandBlanks(permutation, index + 1, current + letter, result);
+        }
+    } else {
+        // Regular tile - keep it as is (uppercase)
+        expandBlanks(permutation, index + 1, current + c, result);
+    }
+}
+
 RawMove MoveGenerator::createRawMove(
     const string& tile_sequence,
     const StartPosition& pos) const {
@@ -199,11 +222,11 @@ RawMove MoveGenerator::createRawMove(
     while (tile_idx < tile_sequence.size() && row <= 14 && col <= 14) {
         if (board_.isEmpty(row, col)) {
             // Place the next tile from the sequence
-            TilePlacement placement;
-            placement.row = row;
-            placement.col = col;
-            placement.letter = tile_sequence[tile_idx];
-            placement.isBlank = false;  // TODO: Handle blanks in Step 2 or later
+            char c = tile_sequence[tile_idx];
+            bool is_blank = (c >= 'a' && c <= 'z');  // lowercase = blank
+            char letter = is_blank ? toupper(c) : c;  // convert to uppercase for display
+
+            TilePlacement placement(row, col, letter, true, is_blank);
             move.placements.push_back(placement);
             tile_idx++;
         }

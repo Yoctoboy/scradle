@@ -291,6 +291,167 @@ void test_move_with_existing_tiles() {
     }
 }
 
+void test_raw_moves_basic() {
+    cout << "\n=== Test: Raw Moves - Basic Generation ===" << endl;
+
+    Board board;
+    Rack rack("CAT");
+    DAWG dawg;
+
+    MoveGenerator generator(board, rack, dawg);
+
+    auto positions = generator.findStartPositions();
+    auto raw_moves = generator.generateAllRawMoves(positions);
+
+    // Should generate raw moves on empty board
+    assert_true(raw_moves.size() > 0, "Should generate raw moves");
+
+    // All raw moves should have at least one placement
+    for (const auto& raw_move : raw_moves) {
+        assert_true(raw_move.placements.size() > 0, "Raw move should have placements");
+    }
+
+    cout << "  Generated " << raw_moves.size() << " raw moves" << endl;
+}
+
+void test_raw_moves_rack_constraint() {
+    cout << "\n=== Test: Raw Moves - Rack Constraints ===" << endl;
+
+    Board board;
+    Rack rack("ABCDCBA");
+    DAWG dawg;
+
+    MoveGenerator generator(board, rack, dawg);
+
+    auto positions = generator.findStartPositions();
+    auto raw_moves = generator.generateAllRawMoves(positions);
+
+    // Check that all raw moves only use letters from the rack
+    for (const auto& raw_move : raw_moves) {
+        string used_letters = "";
+        for (const auto& placement : raw_move.placements) {
+            used_letters += placement.letter;
+        }
+
+        // Verify each used letter is in the rack
+        for (char c : used_letters) {
+            int count_in_used = 0;
+            int count_in_rack = 0;
+
+            for (char u : used_letters) {
+                if (u == c) count_in_used++;
+            }
+
+            string rack_str = rack.toString();
+            for (char r : rack_str) {
+                if (r == c) count_in_rack++;
+            }
+
+            assert_true(count_in_used <= count_in_rack,
+                        "Letter '" + string(1, c) + "' used <= available in rack", false);
+        }
+    }
+
+    assert_true(true, "All raw moves use only rack letters");
+}
+
+void test_raw_moves_blank_expansion() {
+    cout << "\n=== Test: Raw Moves - Blank Expansion ===" << endl;
+
+    Board board;
+    Rack rack("A?BCDE");
+    DAWG dawg;
+
+    // Place a tile at center
+    board.setLetter(7, 7, 'A');
+
+    MoveGenerator generator(board, rack, dawg);
+
+    auto positions = generator.findStartPositions();
+    auto raw_moves = generator.generateAllRawMoves(positions);
+
+    // Should generate many raw moves (blank expands to 26 letters)
+    assert_true(raw_moves.size() > 0, "Should generate raw moves with blanks");
+
+    // Check that some moves have blanks marked
+    int found_AABzE = 0;
+    int found_AABzD = 0;
+    bool found_blank_move = false;
+    for (const auto& raw_move : raw_moves) {
+        int found_blank_in_move = 0;
+        for (const auto& placement : raw_move.placements) {
+            if (placement.is_blank) {
+                found_blank_in_move++;
+                found_blank_move = true;
+            }
+        }
+        assert_true(found_blank_in_move <= 1, "Move has one blank or less", 0);
+        if (raw_move.direction == Direction::HORIZONTAL) {
+            if (raw_move.start_row == 7 && raw_move.start_col == 6) {
+                if ((int)raw_move.placements.size() == 4) {
+                    TilePlacement p0 = raw_move.placements.at(0);
+                    if (p0.row == 7 && p0.col == 6 && p0.letter == 'A' && p0.is_blank == false && p0.is_from_rack) {
+                        TilePlacement p1 = raw_move.placements.at(1);
+                        if (p1.row == 7 && p1.col == 8 && p1.letter == 'B' && p1.is_blank == false && p1.is_from_rack) {
+                            TilePlacement p2 = raw_move.placements.at(2);
+                            if (p2.row == 7 && p2.col == 9 && p2.letter == 'Z' && p2.is_blank && p2.is_from_rack) {
+                                TilePlacement p3 = raw_move.placements.at(3);
+                                if (p3.row == 7 && p3.col == 10 && p3.letter == 'E' && p3.is_blank == false && p3.is_from_rack) {
+                                    found_AABzE++;
+                                }
+                                if (p3.row == 7 && p3.col == 10 && p3.letter == 'D' && p3.is_blank == false && p3.is_from_rack) {
+                                    found_AABzD++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    cout << "  Generated " << raw_moves.size() << " raw moves with blank expansion" << endl;
+    assert_equal(1, found_AABzE, "Should find AABzE move once");
+    assert_equal(1, found_AABzD, "Should find AABzD move once");
+    assert_true(found_blank_move, "Should find at least one move with blank tile");
+}
+
+void test_raw_moves_adjacency() {
+    cout << "\n=== Test: Raw Moves - Adjacency to Existing Tiles ===" << endl;
+
+    Board board;
+    Rack rack("XY");
+    DAWG dawg;
+
+    // Place a tile at center
+    board.setLetter(7, 7, 'A');
+
+    MoveGenerator generator(board, rack, dawg);
+
+    auto positions = generator.findStartPositions();
+    auto raw_moves = generator.generateAllRawMoves(positions);
+
+    // All raw moves should be adjacent to the existing tile
+    for (const auto& raw_move : raw_moves) {
+        bool is_adjacent = false;
+
+        for (const auto& placement : raw_move.placements) {
+            int r = placement.row;
+            int c = placement.col;
+
+            // Check if this placement is adjacent to (7,7)
+            if ((r == 7 && (c == 6 || c == 8)) ||  // left or right
+                (c == 7 && (r == 6 || r == 8))) {  // above or below
+                is_adjacent = true;
+                break;
+            }
+        }
+
+        assert_true(is_adjacent, "Raw move should be adjacent to existing tile");
+    }
+
+    cout << "  All " << raw_moves.size() << " raw moves are properly adjacent" << endl;
+}
+
 void test_word_validation() {
     cout << "\n=== Test: Word Validation (Only Valid Words) ===" << endl;
 
@@ -323,10 +484,21 @@ int main() {
     cout << "=== Scradle Engine - Phase 3 Tests ===" << endl;
     cout << "Testing Move Generator with Cross-Checks" << endl;
 
+    // Step 1 tests
     test_start_positions();
+    test_start_positions_empty_board();
+
+    // Basic structure tests
     test_move_structure();
     test_tile_placement();
-    test_start_positions_empty_board();
+
+    // Step 2 tests (raw move generation)
+    test_raw_moves_basic();
+    test_raw_moves_rack_constraint();
+    test_raw_moves_blank_expansion();
+    test_raw_moves_adjacency();
+
+    // Integration tests (Steps 1-3)
     test_anchor_identification_with_tiles();
     test_cross_check_computation();
     test_simple_move_generation();
