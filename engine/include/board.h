@@ -1,16 +1,17 @@
 #ifndef SCRADLE_BOARD_H
 #define SCRADLE_BOARD_H
 
-#include "cell.h"
 #include <array>
-#include <string>
 #include <iostream>
+#include <string>
+
+#include "cell.h"
 
 namespace scradle {
 
 // 15x15 Scrabble board
 class Board {
-public:
+   public:
     static constexpr int SIZE = 15;
     static constexpr int CENTER = 7;
 
@@ -24,6 +25,7 @@ public:
     void setLetter(int row, int col, char letter);
 
     bool isEmpty(int row, int col) const;
+    bool isAnchor(int row, int col) const;
     bool isValidPosition(int row, int col) const;
 
     // Board state
@@ -34,7 +36,7 @@ public:
     void display() const;
     std::string toString() const;
 
-private:
+   private:
     std::array<Cell, SIZE * SIZE> cells_;
 
     // Helper to get flat index
@@ -44,6 +46,6 @@ private:
     void initializePremiumSquares();
 };
 
-} // namespace scradle
+}  // namespace scradle
 
-#endif // SCRADLE_BOARD_H
+#endif  // SCRADLE_BOARD_H

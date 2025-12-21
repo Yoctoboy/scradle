@@ -1,11 +1,12 @@
+#include <algorithm>
+#include <iostream>
+
 #include "board.h"
-#include "rack.h"
 #include "dawg.h"
 #include "move.h"
 #include "move_generator.h"
+#include "rack.h"
 #include "test_framework.h"
-#include <iostream>
-#include <algorithm>
 
 using namespace scradle;
 using namespace test;
@@ -28,24 +29,93 @@ void test_move_structure() {
     assert_equal(42, move.getScore(), "Score should be 42");
 }
 
-void test_anchor_identification_empty_board() {
-    cout << "\n=== Test: Anchor Identification (Empty Board) ===" << endl;
+void test_start_positions_empty_board() {
+    cout << "\n=== Test: Start Positions (Empty Board) ===" << endl;
 
     Board board;
     Rack rack("ABCDEFG");
     DAWG dawg;
 
-    // Load a small test dictionary
-    vector<string> test_words = {"CAT", "DOG", "BIRD"};
-    dawg.build(test_words);
+    MoveGenerator generator(board, rack, dawg);
+    auto positions = generator.findStartPositions();
+
+    // On empty board, should generate 14 start positions:
+    // - 7 vertical positions (rows 1-7, all at col 7)
+    // - 7 horizontal positions (cols 1-7, all at row 7)
+    assert_equal(14, (int)positions.size(), "Empty board should have 14 start positions");
+
+    // Verify some specific positions exist
+    bool found_vertical_row1 = false;
+    bool found_horizontal_col1 = false;
+
+    for (const auto& pos : positions) {
+        if (pos.row == 1 && pos.col == 7 && pos.direction == Direction::VERTICAL) {
+            found_vertical_row1 = true;
+            assert_equal(7, pos.min_extension, "Row 1 vertical min_ext should be 7");
+            assert_equal(7, pos.max_extension, "Row 1 vertical max_ext should be 7");
+        }
+        if (pos.row == 7 && pos.col == 1 && pos.direction == Direction::HORIZONTAL) {
+            found_horizontal_col1 = true;
+            assert_equal(7, pos.min_extension, "Col 1 horizontal min_ext should be 7");
+            assert_equal(7, pos.max_extension, "Col 1 horizontal max_ext should be 7");
+        }
+    }
+
+    assert_true(found_vertical_row1, "Should find vertical start at row 1, col 7");
+    assert_true(found_horizontal_col1, "Should find horizontal start at row 7, col 1");
+}
+
+void test_start_positions() {
+    cout << "\n=== Test: Start Positions ===" << endl;
+
+    Board board;
+    Rack rack("ABCDEFG");
+    DAWG dawg;
+
+    // Place some tiles
+    board.setLetter(10, 7, 'C');
+    board.setLetter(10, 8, 'A');
+    board.setLetter(10, 9, 'T');
+    board.setLetter(9, 9, 'A');
 
     MoveGenerator generator(board, rack, dawg);
+    auto positions = generator.findStartPositions();
 
-    // On empty board, only center should be an anchor
-    auto anchors = generator.generateMovesHorizontal();
+    bool found_vertical_row_above_2 = false;
+    bool found_vertical_row_below_11 = false;
+    bool found_vertical_far_above_AT = false;
+    bool found_vertical_close_above_AT = false;
+    bool found_vertical_close_below_AT = false;
 
-    // Should generate some moves from the center
-    assert_true(!anchors.empty() || true, "Move generation should run without crashing");
+    for (const auto& pos : positions) {
+        if (pos.row < 2) {
+            found_vertical_row_above_2 = true;
+        }
+        if (pos.row > 11) {
+            found_vertical_row_below_11 = true;
+        }
+        if (pos.row == 2 && pos.col == 9 && pos.direction == Direction::VERTICAL) {
+            found_vertical_far_above_AT = true;
+            assert_equal(7, pos.min_extension, "Far above AT min_ext should be 7");
+            assert_equal(7, pos.max_extension, "Far above AT max_ext should be 7");
+        }
+        if (pos.row == 8 && pos.col == 9 && pos.direction == Direction::VERTICAL) {
+            found_vertical_close_above_AT = true;
+            assert_equal(1, pos.min_extension, "Close above AT min_ext should be 1");
+            assert_equal(5, pos.max_extension, "Close above AT max_ext should be 5");
+        }
+        if (pos.row == 11 && pos.col == 9 && pos.direction == Direction::VERTICAL) {
+            found_vertical_close_below_AT = true;
+            assert_equal(1, pos.min_extension, "Close above AT min_ext should be 1");
+            assert_equal(4, pos.max_extension, "Close above AT max_ext should be 4");
+        }
+    }
+
+    assert_false(found_vertical_row_above_2, "Should not find vertical start below row 3");
+    assert_false(found_vertical_row_below_11, "Should not find vertical start below row 11");
+    assert_true(found_vertical_far_above_AT, "Should find vertical start at row 2, col 9");
+    assert_true(found_vertical_close_above_AT, "Should find vertical start at row 8, col 9");
+    assert_true(found_vertical_close_below_AT, "Should find vertical start at row 11, col 9");
 }
 
 void test_anchor_identification_with_tiles() {
@@ -66,12 +136,12 @@ void test_anchor_identification_with_tiles() {
     MoveGenerator generator(board, rack, dawg);
 
     // Should find anchors adjacent to existing tiles
-    auto moves = generator.generateMovesHorizontal();
+    auto moves = generator.generateMoves();
 
     // Verify all generated moves are valid words in the DAWG
     for (const auto& move : moves) {
         assert_true(dawg.contains(move.getWord()),
-            "Generated word '" + move.getWord() + "' should be in DAWG");
+                    "Generated word '" + move.getWord() + "' should be in DAWG");
     }
 
     assert_true(true, "Move generation with existing tiles should run");
@@ -124,7 +194,7 @@ void test_simple_move_generation() {
     for (const auto& move : moves) {
         // All moves must be valid words in the DAWG
         assert_true(dawg.contains(move.getWord()),
-            "Generated word '" + move.getWord() + "' should be in DAWG");
+                    "Generated word '" + move.getWord() + "' should be in DAWG");
 
         // Track which words we found
         if (move.getWord() == "CAT") found_cat = true;
@@ -135,25 +205,6 @@ void test_simple_move_generation() {
     assert_true(found_cat || found_at, "Should find CAT or AT");
 
     cout << "  Generated " << moves.size() << " valid moves" << endl;
-}
-
-void test_move_direction() {
-    cout << "\n=== Test: Move Direction ===" << endl;
-
-    Board board;
-    Rack rack("DOG");
-    DAWG dawg;
-
-    vector<string> test_words = {"DOG", "DO"};
-    dawg.build(test_words);
-
-    MoveGenerator generator(board, rack, dawg);
-
-    auto h_moves = generator.generateMovesHorizontal();
-    auto v_moves = generator.generateMovesVertical();
-
-    assert_true(h_moves.size() > 0, "Horizontal move generation should produce moves");
-    assert_true(v_moves.size() > 0, "Vertical move generation should produce moves");
 }
 
 void test_tile_placement() {
@@ -236,7 +287,7 @@ void test_move_with_existing_tiles() {
     // Verify all generated moves are valid words
     for (const auto& move : moves) {
         assert_true(dawg.contains(move.getWord()),
-            "Generated word '" + move.getWord() + "' should be in DAWG");
+                    "Generated word '" + move.getWord() + "' should be in DAWG");
     }
 }
 
@@ -261,7 +312,7 @@ void test_word_validation() {
     // Every generated move MUST be in the DAWG
     for (const auto& move : moves) {
         assert_true(dawg.contains(move.getWord()),
-            "Generated word '" + move.getWord() + "' must be valid");
+                    "Generated word '" + move.getWord() + "' must be valid");
 
         // Also verify it's not a random invalid combination
         assert_true(move.getWord().length() >= 2, "Words should be at least 2 letters");
@@ -272,14 +323,14 @@ int main() {
     cout << "=== Scradle Engine - Phase 3 Tests ===" << endl;
     cout << "Testing Move Generator with Cross-Checks" << endl;
 
+    test_start_positions();
     test_move_structure();
     test_tile_placement();
-    test_anchor_identification_empty_board();
+    test_start_positions_empty_board();
     test_anchor_identification_with_tiles();
     test_cross_check_computation();
     test_simple_move_generation();
     test_word_validation();
-    test_move_direction();
     test_empty_rack();
     test_large_dictionary();
     test_move_with_existing_tiles();

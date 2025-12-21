@@ -11,14 +11,24 @@
 
 namespace scradle {
 
-// Represents an anchor square (a valid starting position for a word)
-struct Anchor {
+// Represents a starting position for word placement
+struct StartPosition {
     int row;
     int col;
-    int max_left_extension;  // How many tiles can extend left (horizontal) or up (vertical)
-    std::set<char> cross_checks;  // Letters that form valid cross-words
+    Direction direction;
+    int min_extension;  // Minimum tiles needed to connect to existing tiles
+    int max_extension;  // Maximum tiles that can be placed before hitting board edge
 
-    Anchor(int r, int c) : row(r), col(c), max_left_extension(0) {}
+    StartPosition(int r, int c, Direction dir, int min_ext, int max_ext)
+        : row(r), col(c), direction(dir), min_extension(min_ext), max_extension(max_ext) {}
+};
+
+// Represents a raw move before validation
+struct RawMove {
+    std::vector<TilePlacement> placements;
+    Direction direction;
+    int start_row;
+    int start_col;
 };
 
 // Generates all valid moves for a given board state and rack
@@ -29,56 +39,56 @@ public:
     // Generate all valid moves
     std::vector<Move> generateMoves();
 
-    // Generate moves in a specific direction
-    std::vector<Move> generateMovesHorizontal();
-    std::vector<Move> generateMovesVertical();
+    // Step 1: Find all start positions (exposed for testing)
+    std::vector<StartPosition> findStartPositions() const;
 
 private:
     const Board& board_;
     const Rack& rack_;
     const DAWG& dawg_;
 
-    // Anchor identification
-    std::vector<Anchor> findAnchors(Direction dir);
-    bool isAnchor(int row, int col) const;
+    // Step 2: Generate all possible raw moves
+    std::vector<RawMove> generateAllRawMoves(const std::vector<StartPosition>& positions) const;
 
-    // Cross-check computation
-    std::set<char> computeCrossChecks(int row, int col, Direction dir);
+    // Helper: Generate permutations of rack tiles
+    void generatePermutations(
+        const std::string& tiles,
+        int min_length,
+        int max_length,
+        std::vector<std::string>& result
+    ) const;
 
-    // Helper to get cross-word (perpendicular to main direction)
-    std::string getCrossWord(int row, int col, Direction main_dir);
+    // Helper: Recursive helper for generatePermutations
+    void generatePermutationsHelper(
+        const std::string& tiles,
+        std::vector<bool>& used,
+        int remaining,
+        std::string& current,
+        std::vector<std::string>& result
+    ) const;
 
-    // Move generation via DAWG traversal
-    void extendRight(
-        const std::shared_ptr<DAWG::Node>& node,
-        const std::string& partial_word,
-        int row, int col,
-        Direction dir,
-        Rack temp_rack,
-        std::vector<Move>& moves,
-        bool anchor_placed,
-        std::vector<int> blank_positions = std::vector<int>()
-    );
+    // Helper: Generate raw move for a specific tile sequence and start position
+    RawMove createRawMove(
+        const std::string& tile_sequence,
+        const StartPosition& pos
+    ) const;
 
-    void extendRightWithAnchor(
-        const std::shared_ptr<DAWG::Node>& node,
-        const std::string& partial_word,
-        int row, int col,
-        Direction dir,
-        Rack temp_rack,
-        std::vector<Move>& moves,
-        bool anchor_placed,
-        int anchor_row, int anchor_col,
-        std::vector<int> blank_positions
-    );
+    // Step 3: Validate moves
+    std::vector<Move> filterValidMoves(const std::vector<RawMove>& raw_moves) const;
 
-    void extendLeft(
-        const Anchor& anchor,
-        Direction dir,
-        std::vector<Move>& moves
-    );
+    // Helper: Check if a raw move forms valid words
+    bool isValidMove(const RawMove& raw_move, std::string& main_word) const;
 
-    // Get next position in the given direction
+    // Helper: Get the complete main word from a raw move
+    std::string getMainWord(const RawMove& raw_move) const;
+
+    // Helper: Get all cross-words formed by new tiles
+    std::vector<std::string> getCrossWords(const RawMove& raw_move) const;
+
+    // Helper: Convert RawMove to Move
+    Move rawMoveToMove(const RawMove& raw_move, const std::string& word) const;
+
+    // Utility functions
     void getNext(int& row, int& col, Direction dir) const;
     void getPrev(int& row, int& col, Direction dir) const;
 };

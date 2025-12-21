@@ -1,11 +1,11 @@
 #include "move_generator.h"
+
 #include <algorithm>
 #include <cctype>
 
-using std::vector;
-using std::set;
+using std::min;
 using std::string;
-using std::shared_ptr;
+using std::vector;
 
 namespace scradle {
 
@@ -13,396 +13,240 @@ MoveGenerator::MoveGenerator(const Board& board, const Rack& rack, const DAWG& d
     : board_(board), rack_(rack), dawg_(dawg) {}
 
 vector<Move> MoveGenerator::generateMoves() {
-    vector<Move> all_moves;
+    // Step 1: Find all start positions
+    vector<StartPosition> positions = findStartPositions();
 
-    // Generate moves in both directions
-    vector<Move> h_moves = generateMovesHorizontal();
-    vector<Move> v_moves = generateMovesVertical();
+    // Step 2: Generate all raw moves
+    vector<RawMove> raw_moves = generateAllRawMoves(positions);
 
-    all_moves.insert(all_moves.end(), h_moves.begin(), h_moves.end());
-    all_moves.insert(all_moves.end(), v_moves.begin(), v_moves.end());
+    // Step 3: Filter and validate moves
+    vector<Move> valid_moves = filterValidMoves(raw_moves);
 
-    return all_moves;
+    return valid_moves;
 }
 
-vector<Move> MoveGenerator::generateMovesHorizontal() {
-    vector<Move> moves;
-    vector<Anchor> anchors = findAnchors(Direction::HORIZONTAL);
+vector<StartPosition> MoveGenerator::findStartPositions() const {
+    vector<StartPosition> positions;
 
-    for (const auto& anchor : anchors) {
-        extendLeft(anchor, Direction::HORIZONTAL, moves);
-    }
-
-    return moves;
-}
-
-vector<Move> MoveGenerator::generateMovesVertical() {
-    vector<Move> moves;
-    vector<Anchor> anchors = findAnchors(Direction::VERTICAL);
-
-    for (const auto& anchor : anchors) {
-        extendLeft(anchor, Direction::VERTICAL, moves);
-    }
-
-    return moves;
-}
-
-vector<Anchor> MoveGenerator::findAnchors(Direction dir) {
-    vector<Anchor> anchors;
-
-    // On an empty board, only the center is an anchor
     if (board_.isBoardEmpty()) {
-        Anchor center(Board::CENTER, Board::CENTER);
-        center.max_left_extension = Board::CENTER;
-        // On empty board, all letters are valid
-        for (char c = 'A'; c <= 'Z'; ++c) {
-            center.cross_checks.insert(c);
+        for (int row = 1; row <= 7; row++) {
+            positions.emplace_back(row, 7, Direction::VERTICAL, 7 - row + 1, 7);
         }
-        anchors.push_back(center);
-        return anchors;
+        for (int col = 1; col <= 7; col++) {
+            positions.emplace_back(7, col, Direction::HORIZONTAL, 7 - col + 1, 7);
+        }
+        return positions;
     }
 
-    // Find all anchors on the board
-    for (int row = 0; row < Board::SIZE; ++row) {
-        for (int col = 0; col < Board::SIZE; ++col) {
-            if (isAnchor(row, col)) {
-                Anchor anchor(row, col);
+    int cur_row, cur_col, min_ext, max_ext;
+    for (int row = 0; row <= 14; row++) {
+        for (int col = 0; col <= 14; col++) {
+            if (!board_.isEmpty(row, col)) {
+                // cell is not empty, so cannot be a start position
+                continue;
+            }
 
-                // Compute cross-checks
-                anchor.cross_checks = computeCrossChecks(row, col, dir);
-
-                // Compute max left extension
-                int ext_row = row, ext_col = col;
-                getPrev(ext_row, ext_col, dir);
-
-                anchor.max_left_extension = 0;
-                while (board_.isValidPosition(ext_row, ext_col) &&
-                       board_.isEmpty(ext_row, ext_col)) {
-                    anchor.max_left_extension++;
-
-                    // Stop if we hit an adjacent tile perpendicular to direction
-                    int check_row = ext_row, check_col = ext_col;
-                    if (dir == Direction::HORIZONTAL) {
-                        if ((check_row > 0 && !board_.isEmpty(check_row - 1, check_col)) ||
-                            (check_row < Board::SIZE - 1 && !board_.isEmpty(check_row + 1, check_col))) {
-                            break;
-                        }
-                    } else {
-                        if ((check_col > 0 && !board_.isEmpty(check_row, check_col - 1)) ||
-                            (check_col < Board::SIZE - 1 && !board_.isEmpty(check_row, check_col + 1))) {
-                            break;
-                        }
-                    }
-
-                    getPrev(ext_row, ext_col, dir);
+            // try to extend vertically
+            min_ext = 0;
+            for (int cur_ext = 1; cur_ext <= 7; cur_ext++) {
+                cur_row = row + cur_ext - 1;
+                if (board_.isAnchor(cur_row, col)) {
+                    min_ext = cur_ext;
+                    break;
                 }
+            }
+            if (min_ext == 0) {
+                // no anchor found extending vertically from (row, col), continuing;
+                continue;
+            }
+            // here find max_ext vertically: how many letters can we add vertically from (row, col)
+            // including the letter we place at (row, col). Needs to take into account already placed tiles and board edge
+            max_ext = 0;
+            cur_row = row;
+            while (cur_row <= 14) {
+                if (board_.isEmpty(cur_row, col)) {
+                    max_ext++;
+                }
+                cur_row++;
+            }
 
-                anchors.push_back(anchor);
+            if (max_ext >= min_ext) {
+                positions.emplace_back(row, col, Direction::VERTICAL, min_ext, min(max_ext, 7));
+            }
+
+            // try to extend horizontally
+            min_ext = 0;
+            for (int cur_ext = 1; cur_ext <= 7; cur_ext++) {
+                cur_col = col + cur_ext - 1;
+                if (board_.isAnchor(row, cur_col)) {
+                    min_ext = cur_ext;
+                    break;
+                }
+            }
+            if (min_ext == 0) {
+                // no anchor found extending horizontally from (row, col), continuing;
+                continue;
+            }
+            // find max_ext horizontally: how many letters can we add horizontally from (row, col)
+            max_ext = 0;
+            cur_col = col;
+            while (cur_col <= 14) {
+                if (board_.isEmpty(row, cur_col)) {
+                    max_ext++;
+                }
+                cur_col++;
+            }
+
+            if (max_ext >= min_ext) {
+                positions.emplace_back(row, col, Direction::HORIZONTAL, min_ext, min(max_ext, 7));
             }
         }
     }
 
-    return anchors;
+    return positions;
 }
 
-bool MoveGenerator::isAnchor(int row, int col) const {
-    // A square is an anchor if:
-    // 1. It's empty
-    if (!board_.isEmpty(row, col)) {
-        return false;
+// ============================================================================
+// STEP 2: Generate all raw moves (stub for now)
+// ============================================================================
+
+vector<RawMove> MoveGenerator::generateAllRawMoves(const vector<StartPosition>& positions) const {
+    vector<RawMove> raw_moves;
+
+    // Get rack tiles as a string
+    string rack_tiles = rack_.toString();
+    if (rack_tiles == "(empty)") {
+        return raw_moves;  // No moves possible with empty rack
     }
 
-    // 2. It's adjacent to a filled square (orthogonally)
-    // Check all four directions
-    if (row > 0 && !board_.isEmpty(row - 1, col)) return true;
-    if (row < Board::SIZE - 1 && !board_.isEmpty(row + 1, col)) return true;
-    if (col > 0 && !board_.isEmpty(row, col - 1)) return true;
-    if (col < Board::SIZE - 1 && !board_.isEmpty(row, col + 1)) return true;
+    // Generate all permutations of all possible lengths (1 to rack size)
+    vector<string> all_permutations;
+    generatePermutations(rack_tiles, 1, rack_tiles.size(), all_permutations);
 
+    // Expand blank tiles in permutations
+    vector<string> expanded_permutations;
+    for (const auto& perm : all_permutations) {
+        expandBlanks(perm, 0, "", expanded_permutations);
+    }
+
+    // For each start position, use only permutations with appropriate lengths
+    for (const auto& pos : positions) {
+        for (const auto& perm : expanded_permutations) {
+            int perm_len = perm.size();
+            // Only use permutations within the min/max extension range
+            if (perm_len >= pos.min_extension && perm_len <= pos.max_extension) {
+                RawMove raw_move = createRawMove(perm, pos);
+                // Only add moves that actually placed tiles
+                if (!raw_move.placements.empty()) {
+                    raw_moves.push_back(raw_move);
+                }
+            }
+        }
+    }
+
+    return raw_moves;
+}
+
+void MoveGenerator::generatePermutations(
+    const string& tiles,
+    int min_length,
+    int max_length,
+    vector<string>& result) const {
+    // Generate all permutations of subsets from min_length to max_length
+    for (int len = min_length; len <= max_length && len <= (int)tiles.size(); len++) {
+        // Generate all subsets of size len, then permute each subset
+        string current;
+        vector<bool> used(tiles.size(), false);
+        generatePermutationsHelper(tiles, used, len, current, result);
+    }
+}
+
+void MoveGenerator::generatePermutationsHelper(
+    const string& tiles,
+    vector<bool>& used,
+    int remaining,
+    string& current,
+    vector<string>& result) const {
+    if (remaining == 0) {
+        result.push_back(current);
+        return;
+    }
+
+    for (size_t i = 0; i < tiles.size(); i++) {
+        if (!used[i]) {
+            used[i] = true;
+            current.push_back(tiles[i]);
+            generatePermutationsHelper(tiles, used, remaining - 1, current, result);
+            current.pop_back();
+            used[i] = false;
+        }
+    }
+}
+
+RawMove MoveGenerator::createRawMove(
+    const string& tile_sequence,
+    const StartPosition& pos) const {
+    RawMove move;
+    move.direction = pos.direction;
+    move.start_row = pos.row;
+    move.start_col = pos.col;
+
+    int row = pos.row;
+    int col = pos.col;
+    size_t tile_idx = 0;
+
+    // Place tiles in the specified direction, skipping occupied squares
+    while (tile_idx < tile_sequence.size() && row <= 14 && col <= 14) {
+        if (board_.isEmpty(row, col)) {
+            // Place the next tile from the sequence
+            TilePlacement placement;
+            placement.row = row;
+            placement.col = col;
+            placement.letter = tile_sequence[tile_idx];
+            placement.isBlank = false;  // TODO: Handle blanks in Step 2 or later
+            move.placements.push_back(placement);
+            tile_idx++;
+        }
+        // Move to next position
+        getNext(row, col, pos.direction);
+    }
+
+    return move;
+}
+
+// ============================================================================
+// STEP 3: Validate moves (stub for now)
+// ============================================================================
+
+vector<Move> MoveGenerator::filterValidMoves(const vector<RawMove>& raw_moves) const {
+    vector<Move> valid_moves;
+    // TODO: Implement in Step 3
+    return valid_moves;
+}
+
+bool MoveGenerator::isValidMove(const RawMove& raw_move, string& main_word) const {
+    // TODO: Implement in Step 3
     return false;
 }
 
-set<char> MoveGenerator::computeCrossChecks(int row, int col, Direction main_dir) {
-    set<char> checks;
-
-    // Get the cross-word perpendicular to the main direction
-    string cross_word = getCrossWord(row, col, main_dir);
-
-    // If no cross-word exists, all letters are valid
-    if (cross_word.empty()) {
-        for (char c = 'A'; c <= 'Z'; ++c) {
-            checks.insert(c);
-        }
-        return checks;
-    }
-
-    // Find which letters form valid words when placed at the anchor
-    for (char c = 'A'; c <= 'Z'; ++c) {
-        // Replace the placeholder in cross_word with the test letter
-        string test_word = cross_word;
-
-        // Find the placeholder position (where the anchor is in the cross_word)
-        size_t placeholder_pos = test_word.find('_');
-        if (placeholder_pos == string::npos) {
-            // This shouldn't happen, but handle it gracefully
-            continue;
-        }
-
-        // Replace the placeholder with the test letter
-        test_word[placeholder_pos] = c;
-
-        if (dawg_.contains(test_word)) {
-            checks.insert(c);
-        }
-    }
-
-    return checks;
+string MoveGenerator::getMainWord(const RawMove& raw_move) const {
+    // TODO: Implement in Step 3
+    return "";
 }
 
-string MoveGenerator::getCrossWord(int row, int col, Direction main_dir) {
-    string word;
-
-    if (main_dir == Direction::HORIZONTAL) {
-        // Build vertical word through this position
-        int start_row = row;
-        while (start_row > 0 && !board_.isEmpty(start_row - 1, col)) {
-            start_row--;
-        }
-
-        int end_row = row;
-        while (end_row < Board::SIZE - 1 && !board_.isEmpty(end_row + 1, col)) {
-            end_row++;
-        }
-
-        // If there are no adjacent letters, no cross-word
-        if (start_row == row && end_row == row) {
-            return "";
-        }
-
-        for (int r = start_row; r <= end_row; ++r) {
-            if (r == row) {
-                word += '_';  // Placeholder for the letter we'll insert
-            } else {
-                word += board_.getLetter(r, col);
-            }
-        }
-    } else {
-        // Build horizontal word through this position
-        int start_col = col;
-        while (start_col > 0 && !board_.isEmpty(row, start_col - 1)) {
-            start_col--;
-        }
-
-        int end_col = col;
-        while (end_col < Board::SIZE - 1 && !board_.isEmpty(row, end_col + 1)) {
-            end_col++;
-        }
-
-        // If there are no adjacent letters, no cross-word
-        if (start_col == col && end_col == col) {
-            return "";
-        }
-
-        for (int c = start_col; c <= end_col; ++c) {
-            if (c == col) {
-                word += '_';  // Placeholder for the letter we'll insert
-            } else {
-                word += board_.getLetter(row, c);
-            }
-        }
-    }
-
-    return word;
+vector<string> MoveGenerator::getCrossWords(const RawMove& raw_move) const {
+    // TODO: Implement in Step 3
+    return vector<string>();
 }
 
-void MoveGenerator::extendLeft(const Anchor& anchor, Direction dir, vector<Move>& moves) {
-    // If there's a tile to the left/above of anchor, we must start from there
-    int prev_row = anchor.row, prev_col = anchor.col;
-    getPrev(prev_row, prev_col, dir);
-
-    if (board_.isValidPosition(prev_row, prev_col) && !board_.isEmpty(prev_row, prev_col)) {
-        // There are existing tiles before the anchor - we must include them
-        // Find the actual start of the word
-        int start_row = anchor.row, start_col = anchor.col;
-        while (true) {
-            int test_row = start_row, test_col = start_col;
-            getPrev(test_row, test_col, dir);
-            if (!board_.isValidPosition(test_row, test_col) || board_.isEmpty(test_row, test_col)) {
-                break;
-            }
-            start_row = test_row;
-            start_col = test_col;
-        }
-
-        // Build the prefix from existing tiles and traverse the DAWG
-        string prefix;
-        shared_ptr<DAWG::Node> node = dawg_.getRoot();
-        int curr_row = start_row, curr_col = start_col;
-
-        while ((curr_row != anchor.row || curr_col != anchor.col)) {
-            char letter = board_.getLetter(curr_row, curr_col);
-            char upper_letter = std::toupper(static_cast<unsigned char>(letter));
-            prefix += upper_letter;
-
-            auto it = node->children.find(upper_letter);
-            if (it == node->children.end()) {
-                // Existing tiles don't form a valid prefix - no moves possible
-                return;
-            }
-            node = it->second;
-
-            getNext(curr_row, curr_col, dir);
-        }
-
-        // Now continue from the anchor position with the DAWG node reached so far
-        extendRight(node, prefix, anchor.row, anchor.col, dir, rack_, moves, false);
-    } else {
-        // No existing tiles before anchor
-        // Try starting at the anchor
-        extendRight(dawg_.getRoot(), "", anchor.row, anchor.col, dir, rack_, moves, false);
-
-        // Also try starting before the anchor (left extension)
-        // This allows moves like QI where Q is placed before the anchor
-        for (int ext = 1; ext <= anchor.max_left_extension; ++ext) {
-            int start_row = anchor.row, start_col = anchor.col;
-            for (int i = 0; i < ext; ++i) {
-                getPrev(start_row, start_col, dir);
-            }
-            if (!board_.isValidPosition(start_row, start_col)) {
-                break;
-            }
-            extendRight(dawg_.getRoot(), "", start_row, start_col, dir, rack_, moves, false);
-        }
-    }
+Move MoveGenerator::rawMoveToMove(const RawMove& raw_move, const string& word) const {
+    // TODO: Implement in Step 3
+    return Move();
 }
 
-void MoveGenerator::extendRight(
-    const shared_ptr<DAWG::Node>& node,
-    const string& partial_word,
-    int row, int col,
-    Direction dir,
-    Rack temp_rack,
-    vector<Move>& moves,
-    bool anchor_placed,
-    vector<int> blank_positions
-) {
-    // Base case: position out of bounds
-    if (!board_.isValidPosition(row, col)) {
-        return;
-    }
-
-    // If this position has a tile, we must use it
-    if (!board_.isEmpty(row, col)) {
-        char letter = board_.getLetter(row, col);
-
-        // Get uppercase version for DAWG traversal (in case it's a blank on board)
-        char upper_letter = std::toupper(static_cast<unsigned char>(letter));
-
-        auto it = node->children.find(upper_letter);
-        if (it == node->children.end()) {
-            return;  // This letter doesn't continue any valid word
-        }
-
-        string new_word = partial_word + upper_letter;
-        int next_row = row, next_col = col;
-        getNext(next_row, next_col, dir);
-
-        extendRight(it->second, new_word, next_row, next_col, dir, temp_rack, moves, true, blank_positions);
-        return;
-    }
-
-    // If we've placed the anchor and the current word is valid, record the move
-    if (anchor_placed && !partial_word.empty() && node->is_end_of_word) {
-        int start_row = row, start_col = col;
-        for (size_t i = 0; i < partial_word.length(); ++i) {
-            getPrev(start_row, start_col, dir);
-        }
-
-        Move move(start_row, start_col, dir, partial_word);
-
-        // Add TilePlacement objects for each tile in the word
-        int tile_row = start_row, tile_col = start_col;
-        for (size_t i = 0; i < partial_word.length(); ++i) {
-            char letter = partial_word[i];
-            bool is_from_rack = board_.isEmpty(tile_row, tile_col);
-
-            // Check if this position is a blank (either newly placed or already on board)
-            bool is_blank = false;
-            if (is_from_rack) {
-                // New tile - check blank_positions
-                is_blank = std::find(blank_positions.begin(), blank_positions.end(), static_cast<int>(i)) != blank_positions.end();
-            } else {
-                // Existing tile on board - check if it's lowercase (indicates blank)
-                char board_letter = board_.getLetter(tile_row, tile_col);
-                is_blank = (board_letter >= 'a' && board_letter <= 'z');
-            }
-
-            move.addPlacement(TilePlacement(tile_row, tile_col, letter, is_from_rack, is_blank));
-            getNext(tile_row, tile_col, dir);
-        }
-
-        moves.push_back(move);
-    }
-
-    // Compute cross-checks for this empty position
-    set<char> cross_checks = computeCrossChecks(row, col, dir);
-
-    // Try placing each available tile from the rack
-    for (int i = 0; i < temp_rack.size(); ++i) {
-        char tile = temp_rack.getTile(i);
-
-        // If this is a blank tile, try all possible letters
-        if (tile == '?') {
-            for (char letter = 'A'; letter <= 'Z'; ++letter) {
-                auto it = node->children.find(letter);
-                if (it == node->children.end()) {
-                    continue;
-                }
-
-                // Check if this letter passes cross-check validation
-                if (cross_checks.find(letter) == cross_checks.end()) {
-                    continue;
-                }
-
-                // Create new rack without the blank
-                Rack new_rack = temp_rack;
-                new_rack.removeTile('?');
-
-                string new_word = partial_word + letter;
-
-                // Track this position as a blank
-                vector<int> new_blank_positions = blank_positions;
-                new_blank_positions.push_back(static_cast<int>(partial_word.length()));
-
-                int next_row = row, next_col = col;
-                getNext(next_row, next_col, dir);
-
-                extendRight(it->second, new_word, next_row, next_col, dir, new_rack, moves, true, new_blank_positions);
-            }
-        } else {
-            // Regular tile
-            auto it = node->children.find(tile);
-            if (it == node->children.end()) {
-                continue;
-            }
-
-            // Check if this letter passes cross-check validation
-            if (cross_checks.find(tile) == cross_checks.end()) {
-                continue;
-            }
-
-            // Create new rack without this tile
-            Rack new_rack = temp_rack;
-            new_rack.removeTile(tile);
-
-            string new_word = partial_word + tile;
-            int next_row = row, next_col = col;
-            getNext(next_row, next_col, dir);
-
-            extendRight(it->second, new_word, next_row, next_col, dir, new_rack, moves, true, blank_positions);
-        }
-    }
-}
+// ============================================================================
+// Utility functions
+// ============================================================================
 
 void MoveGenerator::getNext(int& row, int& col, Direction dir) const {
     if (dir == Direction::HORIZONTAL) {
@@ -420,4 +264,4 @@ void MoveGenerator::getPrev(int& row, int& col, Direction dir) const {
     }
 }
 
-} // namespace scradle
+}  // namespace scradle
