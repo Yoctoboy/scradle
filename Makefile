@@ -16,7 +16,6 @@ SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # Targets
-TARGET = $(BIN_DIR)/scradle_engine
 TEST_BOARD_TARGET = $(BIN_DIR)/test_board
 TEST_DAWG_TARGET = $(BIN_DIR)/test_dawg
 TEST_MOVEGEN_TARGET = $(BIN_DIR)/test_move_generator
@@ -27,13 +26,10 @@ TEST_COMPLEX_TARGET = $(BIN_DIR)/test_complex_board
 
 .PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-all dirs
 
-all: dirs $(TARGET)
+all: dirs $(OBJECTS)
 
 dirs:
 	@mkdir -p $(OBJ_DIR) $(BIN_DIR)
-
-$(TARGET): $(OBJECTS)
-	$(CXX) $(OBJECTS) -o $@ $(LDFLAGS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

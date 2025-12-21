@@ -2,6 +2,10 @@
 
 #include <algorithm>
 #include <cctype>
+#include <iostream>
+#include <set>
+
+#include "scorer.h"
 
 using std::min;
 using std::string;
@@ -23,6 +27,67 @@ vector<Move> MoveGenerator::generateMoves() {
     vector<Move> valid_moves = filterValidMoves(raw_moves);
 
     return valid_moves;
+}
+
+vector<Move> MoveGenerator::getBestMove() {
+    vector<Move> valid_moves = generateMoves();
+
+    if (valid_moves.empty()) {
+        return valid_moves;
+    }
+
+    // Step 4: Score all moves
+    Scorer scorer;
+    for (auto& move : valid_moves) {
+        int score = scorer.scoreMove(board_, move);
+        move.setScore(score);
+    }
+
+    // Step 5: Find the best score
+    int best_score = valid_moves[0].getScore();
+    for (const auto& move : valid_moves) {
+        if (move.getScore() > best_score) {
+            best_score = move.getScore();
+        }
+    }
+
+    // Step 6: Return all moves with the best score
+    vector<Move> best_moves;
+    for (const auto& move : valid_moves) {
+        if (move.getScore() == best_score) {
+            best_moves.push_back(move);
+        }
+    }
+
+    return best_moves;
+}
+
+vector<Move> MoveGenerator::getTopMoves(int count) {
+    vector<Move> valid_moves = generateMoves();
+
+    if (valid_moves.empty()) {
+        return valid_moves;
+    }
+
+    // Score all moves
+    Scorer scorer;
+    for (auto& move : valid_moves) {
+        int score = scorer.scoreMove(board_, move);
+        move.setScore(score);
+    }
+
+    // Sort moves by score in descending order
+    std::sort(valid_moves.begin(), valid_moves.end(),
+              [](const Move& a, const Move& b) {
+                  return a.getScore() > b.getScore();
+              });
+
+    // Return top 'count' moves (or all if fewer than count)
+    if (count >= (int)valid_moves.size()) {
+        return valid_moves;
+    }
+
+    return vector<Move>(valid_moves.begin(), valid_moves.begin() + count);
 }
 
 vector<StartPosition> MoveGenerator::findStartPositions() const {
@@ -152,13 +217,26 @@ void MoveGenerator::generatePermutations(
     int min_length,
     int max_length,
     vector<string>& result) const {
+    // Use a set to automatically deduplicate permutations (handles duplicate tiles)
+    std::set<string> unique_permutations;
+
     // Generate all permutations of subsets from min_length to max_length
     for (int len = min_length; len <= max_length && len <= (int)tiles.size(); len++) {
         // Generate all subsets of size len, then permute each subset
         string current;
         vector<bool> used(tiles.size(), false);
-        generatePermutationsHelper(tiles, used, len, current, result);
+        vector<string> temp_result;
+        generatePermutationsHelper(tiles, used, len, current, temp_result);
+
+        // Insert into set to remove duplicates
+        for (const auto& perm : temp_result) {
+            unique_permutations.insert(perm);
+        }
     }
+
+    // Convert set back to vector
+    result.clear();
+    result.assign(unique_permutations.begin(), unique_permutations.end());
 }
 
 void MoveGenerator::generatePermutationsHelper(
@@ -245,13 +323,21 @@ vector<Move> MoveGenerator::filterValidMoves(const vector<RawMove>& raw_moves) c
     vector<Move> valid_moves;
 
     for (const auto& raw_move : raw_moves) {
-        // Validate the move
         if (isValidMove(raw_move)) {
             // Get the main word for the move
             string main_word = getMainWord(raw_move);
 
             // Convert to Move and add to valid moves
             Move move = rawMoveToMove(raw_move, main_word);
+
+            // Debug: Log QUARRE moves
+            if (main_word == "QUARRE") {
+                std::cerr << "Valid QUARRE move created: StartPos(" << raw_move.start_row << ","
+                          << raw_move.start_col << " "
+                          << (raw_move.direction == Direction::HORIZONTAL ? "H" : "V")
+                          << ") -> Final move: " << move.toString() << std::endl;
+            }
+
             valid_moves.push_back(move);
         }
     }

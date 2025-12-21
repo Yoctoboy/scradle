@@ -1,13 +1,14 @@
 #ifndef SCRADLE_MOVE_GENERATOR_H
 #define SCRADLE_MOVE_GENERATOR_H
 
+#include <memory>
+#include <set>
+#include <vector>
+
 #include "board.h"
-#include "rack.h"
 #include "dawg.h"
 #include "move.h"
-#include <vector>
-#include <set>
-#include <memory>
+#include "rack.h"
 
 namespace scradle {
 
@@ -33,7 +34,7 @@ struct RawMove {
 
 // Generates all valid moves for a given board state and rack
 class MoveGenerator {
-public:
+   public:
     MoveGenerator(const Board& board, const Rack& rack, const DAWG& dawg);
 
     // Generate all valid moves
@@ -50,7 +51,13 @@ public:
     std::vector<std::string> getCrossWords(const RawMove& raw_move) const;
     bool isValidMove(const RawMove& raw_move) const;
 
-private:
+    // Get best moves (all moves with the highest score)
+    std::vector<Move> getBestMove();
+
+    // Get top X moves sorted by score (descending)
+    std::vector<Move> getTopMoves(int count);
+
+   private:
     const Board& board_;
     const Rack& rack_;
     const DAWG& dawg_;
@@ -60,8 +67,7 @@ private:
         const std::string& tiles,
         int min_length,
         int max_length,
-        std::vector<std::string>& result
-    ) const;
+        std::vector<std::string>& result) const;
 
     // Helper: Recursive helper for generatePermutations
     void generatePermutationsHelper(
@@ -69,22 +75,19 @@ private:
         std::vector<bool>& used,
         int remaining,
         std::string& current,
-        std::vector<std::string>& result
-    ) const;
+        std::vector<std::string>& result) const;
 
     // Helper: Expand blank tiles ('?') to all possible letters
     void expandBlanks(
         const std::string& permutation,
         size_t index,
         std::string current,
-        std::vector<std::string>& result
-    ) const;
+        std::vector<std::string>& result) const;
 
     // Helper: Generate raw move for a specific tile sequence and start position
     RawMove createRawMove(
         const std::string& tile_sequence,
-        const StartPosition& pos
-    ) const;
+        const StartPosition& pos) const;
 
     // Step 3: Validate moves
     std::vector<Move> filterValidMoves(const std::vector<RawMove>& raw_moves) const;
@@ -97,6 +100,6 @@ private:
     void getPrev(int& row, int& col, Direction dir) const;
 };
 
-} // namespace scradle
+}  // namespace scradle
 
-#endif // SCRADLE_MOVE_GENERATOR_H
+#endif  // SCRADLE_MOVE_GENERATOR_H

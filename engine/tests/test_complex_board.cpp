@@ -49,11 +49,9 @@ void test_board_parser() {
     // Verify empty cells
     assert_equal(' ', board.getLetter(0, 0), "Row 0, col 0 should be empty");
     assert_equal(' ', board.getLetter(5, 5), "Row 5, col 5 should be empty");
-
-    cout << "  Board parsing works! You can use raw strings with indentation" << endl;
 }
 
-void test_example_complex_board() {
+void test_example_board() {
     cout << "\n=== Test: Example Complex Board ===" << endl;
 
     // Example board - replace with your own test cases
@@ -80,39 +78,162 @@ void test_example_complex_board() {
 
     Rack rack("HELLO");
     MoveGenerator gen(board, rack, dawg);
-    auto moves = gen.generateMoves();
+    auto moves = gen.getBestMove();
 
     cout << "  Generated " << moves.size() << " moves with rack HELLO" << endl;
-    assert_true(moves.size() > 0, "Should generate at least some moves");
+    assert_equal(1, (int)moves.size(), "Should generate at least some moves");
+    assert_equal(moves[0].toString(), std::string("OHE at G8 [25 pts]"), "Best move found is \"OHE\"");
+}
 
-    Scorer scorer;
-    for (auto& move : moves) {
-        int score = scorer.scoreMove(board, move);
-        move.setScore(score);
+void test_board_scenario_1() {
+    cout << "\n=== Test: Example Complex Board 1 ===" << endl;
+
+    // Example board - replace with your own test cases
+    Board board = Board::parseBoard(R"(
+        ...............
+        ...............
+        ...............
+        ..........M....
+        ..........U....
+        ..........L....
+        ..........U....
+        ...MIXTES.D....
+        ......O.KAS....
+        ......U.AH.....
+        ......R.T......
+        ......N.E......
+        ..CE..O.RABIOLE
+        CEIGNAIS.......
+        INFO..E........
+    )");
+
+    DAWG dawg;
+    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
+
+    Rack rack("WANRRQU");
+    MoveGenerator gen(board, rack, dawg);
+    auto top_moves = gen.getTopMoves(5);
+
+    assert_equal(std::string("QUARRE at 15H [42 pts]"), top_moves[0].toString(), "Top 1 move is QUARRE at 15H [42 pts]");
+    assert_equal(std::string("WAX at 6F [41 pts]"), top_moves[1].toString(), "Top 2 move is WAX at 6F [41 pts]");
+    assert_equal(std::string("QUENA at 15K [39 pts]"), top_moves[2].toString(), "Top 3 move is QUENA at 15K [39 pts]");
+}
+
+void test_board_scenario_2() {
+    cout << "\n=== Test: Example Complex Board 2 ===" << endl;
+
+    // Example board - replace with your own test cases
+    Board board = Board::parseBoard(R"(
+        ...........H...
+        ...........A...
+        ...........Z...
+        ..........MA...
+        ..........UN...
+        ..........L....
+        ..........U....
+        ...MIXTES.D...Q
+        ......O.KAS...U
+        ......U.AH....A
+        ......R.T.....R
+        ......N.E.....R
+        ..CE..O.RABIOLE
+        CEIGNAIS......N
+        INFO..E.......T
+    )");
+
+    DAWG dawg;
+    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
+
+    Rack rack("APUUWE?");
+    MoveGenerator gen(board, rack, dawg);
+    auto top_moves = gen.getTopMoves(5);
+
+    cout << "  Top moves:" << endl;
+    for (size_t i = 0; i < top_moves.size() && i < 5; i++) {
+        cout << "    " << i << ": " << top_moves[i].toString() << endl;
     }
 
-    // Sort by score
-    std::sort(moves.begin(), moves.end(),
-              [](const Move& a, const Move& b) { return a.getScore() > b.getScore(); });
+    assert_equal(std::string("WAOUH at A8 [48 pts]"), top_moves[0].toString(), "Top 1 move is WAOUH at A8 [48 pts]");
+    assert_equal(std::string("WAX at 6F [41 pts]"), top_moves[1].toString(), "Top 2 move is WAX at 6F [41 pts]");
+    assert_equal(std::string("WAX at 6F [40 pts]"), top_moves[2].toString(), "Top 3 move is WAX at 6F [40 pts]");
+}
 
-    // Show top 5 moves
-    cout << "\n  Top 5 moves:" << endl;
-    for (int i = 0; i < std::min(5, (int)moves.size()); ++i) {
-        const auto& m = moves[i];
-        cout << "    " << (i + 1) << ". " << m.toString() << endl;
-    }
+void test_board_scenario_3() {
+    cout << "\n=== Test: Example Complex Board 3 ===" << endl;
+
+    // Example board - replace with your own test cases
+    Board board = Board::parseBoard(R"(
+        ...JELLOS......
+        ......I........
+        ....T.M........
+        ....I.O........
+        ....P.U........
+        ....E.S........
+        ....R.I........
+        ..SCANNE.......
+        ....I..........
+        ....TWEETEUR...
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+    )");
+
+    DAWG dawg;
+    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
+
+    Rack rack("EAITDON");
+    MoveGenerator gen(board, rack, dawg);
+    auto top_moves = gen.getBestMove();
+
+    assert_equal(1, (int)top_moves.size(), "Only one best move found");
+    assert_equal(std::string("DORAIENT at 12H [74 pts]"), top_moves[0].toString(), "Top move is DORAIENT at 12H [74 pts]");
+}
+
+void test_board_scenario_4() {
+    cout << "\n=== Test: Example Complex Board 3 ===" << endl;
+
+    // Example board - replace with your own test cases
+    Board board = Board::parseBoard(R"(
+        ......OVOIDE..E
+        .........X....V
+        ........DOLCE.Z
+        .........N.INFO
+        ........OSE...N
+        ........U.X...E
+        ........P.T....
+        .....EWES.R....
+        ..........U....
+        ..........D....
+        .......MATELOTS
+        ......RAIERA...
+        LAMIFIE........
+        ...............
+        ...............
+    )");
+
+    DAWG dawg;
+    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
+
+    Rack rack("CQSUUGH");
+    MoveGenerator gen(board, rack, dawg);
+    auto top_moves = gen.getBestMove();
+
+    assert_equal(2, (int)top_moves.size(), "Two best moves found");
+    assert_equal(std::string("THUGS at G11 [29 pts]"), top_moves[0].toString(), "Top move is THUGS at G11 [29 pts]");
+    assert_equal(std::string("CHUS at I5 [29 pts]"), top_moves[1].toString(), "Top move is CHUS at I5 [29 pts]");
 }
 
 int main() {
     cout << "=== Scradle Engine - Complex Board Tests ===" << endl;
 
     test_board_parser();
-    test_example_complex_board();
-
-    // TODO: Add more test functions here
-    // test_my_custom_scenario_1();
-    // test_my_custom_scenario_2();
-    // etc.
+    test_example_board();
+    test_board_scenario_1();
+    test_board_scenario_2();
+    test_board_scenario_3();
+    test_board_scenario_4();
 
     print_summary();
 
