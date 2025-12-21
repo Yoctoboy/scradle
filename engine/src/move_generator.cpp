@@ -223,7 +223,7 @@ RawMove MoveGenerator::createRawMove(
         if (board_.isEmpty(row, col)) {
             // Place the next tile from the sequence
             char c = tile_sequence[tile_idx];
-            bool is_blank = (c >= 'a' && c <= 'z');  // lowercase = blank
+            bool is_blank = (c >= 'a' && c <= 'z');   // lowercase = blank
             char letter = is_blank ? toupper(c) : c;  // convert to uppercase for display
 
             TilePlacement placement(row, col, letter, true, is_blank);
@@ -317,8 +317,9 @@ string MoveGenerator::getMainWord(const RawMove& raw_move) const {
 
     while (row >= 0 && col >= 0 && row <= 14 && col <= 14) {
         if (!board_.isEmpty(row, col)) {
-            // Existing tile on board
-            word += board_.getLetter(row, col);
+            // Existing tile on board (convert to uppercase, as blanks are stored as lowercase)
+            char letter = board_.getLetter(row, col);
+            word += toupper(letter);
         } else {
             // Check if we placed a tile here
             bool found = false;
@@ -359,9 +360,9 @@ vector<string> MoveGenerator::getCrossWords(const RawMove& raw_move) const {
         getNext(next_row, next_col, perp_dir);
 
         bool has_prev = (prev_row >= 0 && prev_col >= 0 && prev_row <= 14 && prev_col <= 14 &&
-                        !board_.isEmpty(prev_row, prev_col));
+                         !board_.isEmpty(prev_row, prev_col));
         bool has_next = (next_row >= 0 && next_col >= 0 && next_row <= 14 && next_col <= 14 &&
-                        !board_.isEmpty(next_row, next_col));
+                         !board_.isEmpty(next_row, next_col));
 
         if (!has_prev && !has_next) {
             // No cross-word formed by this tile
@@ -390,7 +391,9 @@ vector<string> MoveGenerator::getCrossWords(const RawMove& raw_move) const {
 
         while (curr_row >= 0 && curr_col >= 0 && curr_row <= 14 && curr_col <= 14) {
             if (!board_.isEmpty(curr_row, curr_col)) {
-                cross_word += board_.getLetter(curr_row, curr_col);
+                // Existing tile on board (convert to uppercase, as blanks are stored as lowercase)
+                char letter = board_.getLetter(curr_row, curr_col);
+                cross_word += toupper(letter);
             } else if (curr_row == row && curr_col == col) {
                 // This is the newly placed tile
                 cross_word += placement.letter;

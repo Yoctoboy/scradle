@@ -36,6 +36,14 @@ class Board {
     void display() const;
     std::string toString() const;
 
+    // Parse board from ASCII representation
+    // Format: 15 lines of 15 characters each, '.' for empty, letter for tile
+    // Example:
+    //   "....CAT........"
+    //   ".....R........."
+    //   ".....M........."
+    static Board parseBoard(const std::string& ascii);
+
    private:
     std::array<Cell, SIZE * SIZE> cells_;
 

@@ -593,8 +593,8 @@ void test_get_cross_words_with_blank() {
     cout << "\n=== Test: Get Cross Words ===" << endl;
 
     Board board;
-    Rack rack("A?T");
     DAWG dawg;
+    Rack rack("A?T");
 
     // Build DAWG with test words
     vector<string> test_words = {"CAT", "ARM", "RAT"};

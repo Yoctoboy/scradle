@@ -1,11 +1,12 @@
+#include <algorithm>
+#include <iostream>
+
 #include "board.h"
-#include "rack.h"
 #include "dawg.h"
 #include "move_generator.h"
+#include "rack.h"
 #include "scorer.h"
 #include "test_framework.h"
-#include <iostream>
-#include <algorithm>
 
 using namespace scradle;
 using namespace test;
@@ -251,7 +252,6 @@ void test_real_game_specific_moves() {
         cout << "    " << (i + 1) << ". " << m.toString() << endl;
     }
 }
-
 
 int main() {
     cout << "=== Scradle Engine - Integration Tests ===" << endl;

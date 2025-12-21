@@ -23,8 +23,9 @@ TEST_MOVEGEN_TARGET = $(BIN_DIR)/test_move_generator
 TEST_SCORER_TARGET = $(BIN_DIR)/test_scorer
 TEST_BLANKS_TARGET = $(BIN_DIR)/test_blanks
 TEST_INTEGRATION_TARGET = $(BIN_DIR)/test_integration
+TEST_COMPLEX_TARGET = $(BIN_DIR)/test_complex_board
 
-.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-all dirs
+.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-all dirs
 
 all: dirs $(TARGET)
 
@@ -55,7 +56,10 @@ test-blanks: dirs $(TEST_BLANKS_TARGET)
 test-integration: dirs $(TEST_INTEGRATION_TARGET)
 	./$(TEST_INTEGRATION_TARGET)
 
-test-all: test-board test-dawg test-movegen test-scorer test-blanks test-integration
+test-complex: dirs $(TEST_COMPLEX_TARGET)
+	./$(TEST_COMPLEX_TARGET)
+
+test-all: test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex
 
 $(TEST_BOARD_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_main.cpp
 	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_main.cpp -o $@
@@ -75,6 +79,9 @@ $(TEST_BLANKS_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/te
 $(TEST_INTEGRATION_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_integration.cpp
 	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_integration.cpp -o $@
 
+$(TEST_COMPLEX_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_complex_board.cpp
+	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_complex_board.cpp -o $@
+
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
@@ -92,6 +99,7 @@ help:
 	@echo "  make test-scorer     - Build and run scoring tests"
 	@echo "  make test-blanks     - Build and run blank tile tests"
 	@echo "  make test-integration- Build and run integration tests (real game)"
+	@echo "  make test-complex    - Build and run complex board tests (custom scenarios)"
 	@echo "  make test-all        - Run all tests"
 	@echo "  make clean           - Remove build artifacts"
 	@echo "  make help            - Show this help message"

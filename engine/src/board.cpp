@@ -129,6 +129,51 @@ string Board::toString() const {
     return ss.str();
 }
 
+Board Board::parseBoard(const std::string& ascii) {
+    Board board;
+
+    int row = 0;
+    int col = 0;
+
+    for (size_t i = 0; i < ascii.length(); ++i) {
+        char c = ascii[i];
+
+        // Skip whitespace at the beginning or end of lines
+        if (c == '\n') {
+            // Move to next row
+            if (col > 0) {  // Only advance if we've read some columns
+                row++;
+                col = 0;
+            }
+            continue;
+        }
+
+        // Skip spaces/tabs at line start
+        if (col == 0 && (c == ' ' || c == '\t')) {
+            continue;
+        }
+
+        // Ensure we're within board bounds
+        if (row >= SIZE) {
+            break;
+        }
+
+        if (col < SIZE) {
+            if (c == '.' || c == ' ') {
+                // Empty cell - already initialized
+                col++;
+            } else if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+                // Letter tile
+                board.setLetter(row, col, toupper(c));
+                col++;
+            }
+            // Ignore other characters
+        }
+    }
+
+    return board;
+}
+
 void Board::initializePremiumSquares() {
     // Standard Scrabble premium square layout
     // Triple Word Score (TW)
