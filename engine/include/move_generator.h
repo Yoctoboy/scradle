@@ -89,6 +89,24 @@ class MoveGenerator {
         const std::string& tile_sequence,
         const StartPosition& pos) const;
 
+    // Helper: Generate all raw moves from a tile sequence with blanks (lazy expansion)
+    std::vector<RawMove> createRawMovesWithBlanks(
+        const std::string& tile_sequence,
+        const StartPosition& pos) const;
+
+    // Helper: Recursive function for lazy blank expansion
+    void expandBlanksLazy(
+        const std::string& tile_sequence,
+        size_t index,
+        std::string current,
+        const StartPosition& pos,
+        std::vector<RawMove>& result) const;
+
+    // Helper: Build word prefix for a partial tile sequence (for DAWG pruning)
+    std::string getWordPrefixForPartialSequence(
+        const std::string& partial_sequence,
+        const StartPosition& pos) const;
+
     // Step 3: Validate moves
     std::vector<Move> filterValidMoves(const std::vector<RawMove>& raw_moves) const;
 

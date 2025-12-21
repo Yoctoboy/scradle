@@ -13,6 +13,30 @@ using std::vector;
 
 namespace scradle {
 
+// ============================================================================
+// Utility functions (defined early for use throughout)
+// ============================================================================
+
+void MoveGenerator::getNext(int& row, int& col, Direction dir) const {
+    if (dir == Direction::HORIZONTAL) {
+        col++;
+    } else {
+        row++;
+    }
+}
+
+void MoveGenerator::getPrev(int& row, int& col, Direction dir) const {
+    if (dir == Direction::HORIZONTAL) {
+        col--;
+    } else {
+        row--;
+    }
+}
+
+// ============================================================================
+// Constructor and main entry points
+// ============================================================================
+
 MoveGenerator::MoveGenerator(const Board& board, const Rack& rack, const DAWG& dawg)
     : board_(board), rack_(rack), dawg_(dawg) {}
 
@@ -185,25 +209,22 @@ vector<RawMove> MoveGenerator::generateAllRawMoves(const vector<StartPosition>& 
     }
 
     // Generate all permutations of all possible lengths (1 to rack size)
+    // Keep blanks as '?' - they will be expanded lazily
     vector<string> all_permutations;
     generatePermutations(rack_tiles, 1, rack_tiles.size(), all_permutations);
 
-    // Expand blank tiles in permutations
-    vector<string> expanded_permutations;
-    for (const auto& perm : all_permutations) {
-        expandBlanks(perm, 0, "", expanded_permutations);
-    }
-
-    // For each start position, use only permutations with appropriate lengths
+    // For each start position, generate moves with lazy blank expansion
     for (const auto& pos : positions) {
-        for (const auto& perm : expanded_permutations) {
+        for (const auto& perm : all_permutations) {
             int perm_len = perm.size();
             // Only use permutations within the min/max extension range
             if (perm_len >= pos.min_extension && perm_len <= pos.max_extension) {
-                RawMove raw_move = createRawMove(perm, pos);
-                // Only add moves that actually placed tiles
-                if (!raw_move.placements.empty()) {
-                    raw_moves.push_back(raw_move);
+                // Generate all possible moves by expanding blanks lazily
+                vector<RawMove> moves_from_perm = createRawMovesWithBlanks(perm, pos);
+                for (auto& move : moves_from_perm) {
+                    if (!move.placements.empty()) {
+                        raw_moves.push_back(move);
+                    }
                 }
             }
         }
@@ -313,6 +334,124 @@ RawMove MoveGenerator::createRawMove(
     }
 
     return move;
+}
+
+vector<RawMove> MoveGenerator::createRawMovesWithBlanks(
+    const string& tile_sequence,
+    const StartPosition& pos) const {
+    vector<RawMove> result;
+
+    // Use recursive expansion to handle blanks lazily
+    expandBlanksLazy(tile_sequence, 0, "", pos, result);
+
+    return result;
+}
+
+string MoveGenerator::getWordPrefixForPartialSequence(
+    const string& partial_sequence,
+    const StartPosition& pos) const {
+    // This simulates placing the partial_sequence and returns the word prefix
+    // including any existing tiles on the board
+
+    Direction dir = pos.direction;
+    int row = pos.row;
+    int col = pos.col;
+
+    // First, walk backwards to find the true start of the word (in case there are tiles before start position)
+    int word_start_row = row;
+    int word_start_col = col;
+
+    int prev_row = row;
+    int prev_col = col;
+    getPrev(prev_row, prev_col, dir);
+
+    while (prev_row >= 0 && prev_col >= 0 && prev_row <= 14 && prev_col <= 14 &&
+           !board_.isEmpty(prev_row, prev_col)) {
+        word_start_row = prev_row;
+        word_start_col = prev_col;
+        getPrev(prev_row, prev_col, dir);
+    }
+
+    // Now build the prefix by walking forward from word_start
+    string prefix = "";
+    int curr_row = word_start_row;
+    int curr_col = word_start_col;
+    size_t tile_idx = 0;  // Index into partial_sequence
+
+    // We need to figure out when we start using partial_sequence tiles
+    // That's when we reach pos.row, pos.col
+    bool reached_start_pos = (curr_row == pos.row && curr_col == pos.col);
+
+    while (curr_row >= 0 && curr_col >= 0 && curr_row <= 14 && curr_col <= 14) {
+        if (!board_.isEmpty(curr_row, curr_col)) {
+            // Existing tile on board
+            char letter = board_.getLetter(curr_row, curr_col);
+            prefix += toupper(letter);
+        } else if (reached_start_pos && tile_idx < partial_sequence.size()) {
+            // Place a tile from partial_sequence
+            char c = partial_sequence[tile_idx];
+            bool is_blank = (c >= 'a' && c <= 'z');
+            char letter = is_blank ? toupper(c) : c;
+            prefix += letter;
+            tile_idx++;
+        } else {
+            // Empty square and no more tiles to place
+            break;
+        }
+
+        // Check if we've reached the start position
+        if (curr_row == pos.row && curr_col == pos.col) {
+            reached_start_pos = true;
+        }
+
+        getNext(curr_row, curr_col, dir);
+    }
+
+    return prefix;
+}
+
+void MoveGenerator::expandBlanksLazy(
+    const string& tile_sequence,
+    size_t index,
+    string current,
+    const StartPosition& pos,
+    vector<RawMove>& result) const {
+    // Base case: processed all tiles in the sequence
+    if (index == tile_sequence.size()) {
+        RawMove move = createRawMove(current, pos);
+        if (!move.placements.empty()) {
+            result.push_back(move);
+        }
+        return;
+    }
+
+    char c = tile_sequence[index];
+    if (c == '?') {
+        // Blank tile - need to try different letters
+        // OPTIMIZATION: Check which letters would form valid DAWG prefixes
+
+        // Build the word prefix up to this point (including board tiles)
+        string word_prefix = getWordPrefixForPartialSequence(current, pos);
+
+        // Try each letter, but only if it keeps us in valid DAWG space
+        for (char letter = 'a'; letter <= 'z'; letter++) {
+            char upper_letter = toupper(letter);
+
+            // Check if adding this letter maintains a valid DAWG prefix
+            // This prunes invalid branches early!
+            // Only prune if we have a non-empty prefix (otherwise we can't make valid inferences)
+            if (word_prefix.empty() || dawg_.hasPrefix(word_prefix + upper_letter)) {
+                expandBlanksLazy(tile_sequence, index + 1, current + letter, pos, result);
+            }
+            // If hasPrefix returns false, we skip this letter entirely
+            // This is the key optimization: we don't explore impossible branches
+        }
+    } else {
+        // Regular tile - keep it as is (uppercase)
+        // For regular tiles, don't prune - we trust the permutations are valid
+        // The final validation will catch invalid words
+        expandBlanksLazy(tile_sequence, index + 1, current + c, pos, result);
+    }
 }
 
 // ============================================================================
@@ -523,26 +662,6 @@ Move MoveGenerator::rawMoveToMove(const RawMove& raw_move, const string& word) c
     }
 
     return move;
-}
-
-// ============================================================================
-// Utility functions
-// ============================================================================
-
-void MoveGenerator::getNext(int& row, int& col, Direction dir) const {
-    if (dir == Direction::HORIZONTAL) {
-        col++;
-    } else {
-        row++;
-    }
-}
-
-void MoveGenerator::getPrev(int& row, int& col, Direction dir) const {
-    if (dir == Direction::HORIZONTAL) {
-        col--;
-    } else {
-        row--;
-    }
 }
 
 }  // namespace scradle
