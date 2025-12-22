@@ -113,57 +113,68 @@ vector<StartPosition> MoveGenerator::findStartPositions() const {
 
             // try to extend vertically
             min_ext = 0;
-            for (int cur_ext = 1; cur_ext <= 7; cur_ext++) {
-                cur_row = row + cur_ext - 1;
-                if (board_.isAnchor(cur_row, col)) {
-                    min_ext = cur_ext;
-                    break;
+
+            // Special case: if there's a tile immediately below, min_ext = 1
+            if (row + 1 <= 14 && !board_.isEmpty(row + 1, col)) {
+                min_ext = 1;
+            } else {
+                // Otherwise, search forward for an anchor
+                for (int cur_ext = 1; cur_ext <= 7; cur_ext++) {
+                    cur_row = row + cur_ext - 1;
+                    if (board_.isAnchor(cur_row, col)) {
+                        min_ext = cur_ext;
+                        break;
+                    }
                 }
-            }
-            if (min_ext == 0) {
-                // no anchor found extending vertically from (row, col), continuing;
-                continue;
-            }
-            // here find max_ext vertically: how many letters can we add vertically from (row, col)
-            // including the letter we place at (row, col). Needs to take into account already placed tiles and board edge
-            max_ext = 0;
-            cur_row = row;
-            while (cur_row <= 14) {
-                if (board_.isEmpty(cur_row, col)) {
-                    max_ext++;
-                }
-                cur_row++;
             }
 
-            if (max_ext >= min_ext) {
-                positions.emplace_back(row, col, Direction::VERTICAL, min_ext, min(max_ext, 7));
+            if (min_ext > 0) {
+                // Found vertical anchor - compute max_ext and add position
+                max_ext = 0;
+                cur_row = row;
+                while (cur_row <= 14) {
+                    if (board_.isEmpty(cur_row, col)) {
+                        max_ext++;
+                    }
+                    cur_row++;
+                }
+
+                if (max_ext >= min_ext) {
+                    positions.emplace_back(row, col, Direction::VERTICAL, min_ext, min(max_ext, 7));
+                }
             }
 
             // try to extend horizontally
             min_ext = 0;
-            for (int cur_ext = 1; cur_ext <= 7; cur_ext++) {
-                cur_col = col + cur_ext - 1;
-                if (board_.isAnchor(row, cur_col)) {
-                    min_ext = cur_ext;
-                    break;
+
+            // Special case: if there's a tile immediately to the right, min_ext = 1
+            if (col + 1 <= 14 && !board_.isEmpty(row, col + 1)) {
+                min_ext = 1;
+            } else {
+                // Otherwise, search forward for an anchor
+                for (int cur_ext = 1; cur_ext <= 7; cur_ext++) {
+                    cur_col = col + cur_ext - 1;
+                    if (board_.isAnchor(row, cur_col)) {
+                        min_ext = cur_ext;
+                        break;
+                    }
                 }
-            }
-            if (min_ext == 0) {
-                // no anchor found extending horizontally from (row, col), continuing;
-                continue;
-            }
-            // find max_ext horizontally: how many letters can we add horizontally from (row, col)
-            max_ext = 0;
-            cur_col = col;
-            while (cur_col <= 14) {
-                if (board_.isEmpty(row, cur_col)) {
-                    max_ext++;
-                }
-                cur_col++;
             }
 
-            if (max_ext >= min_ext) {
-                positions.emplace_back(row, col, Direction::HORIZONTAL, min_ext, min(max_ext, 7));
+            if (min_ext > 0) {
+                // Found horizontal anchor - compute max_ext and add position
+                max_ext = 0;
+                cur_col = col;
+                while (cur_col <= 14) {
+                    if (board_.isEmpty(row, cur_col)) {
+                        max_ext++;
+                    }
+                    cur_col++;
+                }
+
+                if (max_ext >= min_ext) {
+                    positions.emplace_back(row, col, Direction::HORIZONTAL, min_ext, min(max_ext, 7));
+                }
             }
         }
     }

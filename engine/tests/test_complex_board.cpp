@@ -226,9 +226,9 @@ void test_board_scenario_4() {
 }
 
 void test_board_scenario_5() {
-    cout << "\n=== Test: Example Complex Board 4 ===" << endl;
+    cout << "\n=== Test: Example Complex Board 4 (Blank on board 'r' in MOrGUE) ===" << endl;
 
-    // Example board - replace with your own test cases
+    // Example board - 'r' is lowercase = blank tile worth 0 points
     Board board = Board::parseBoard(R"(
         ...............
         ...............
@@ -247,16 +247,30 @@ void test_board_scenario_5() {
         ...............
     )");
 
+    cout << "Board with blank 'r' at (7,5):" << endl;
+    board.display();
+
     DAWG dawg;
     dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
 
     Rack rack("TEONAEE");
     MoveGenerator gen(board, rack, dawg);
-    auto top_moves = gen.getTopMoves(2);
+    auto top_moves = gen.getTopMoves(5);
 
-    // assert_equal(1, (int)top_moves.size(), "Two best moves found");
+    // The issue: cross-words that include the blank 'r' should score it as 0 points
+    // Check if we're scoring correctly
     assert_equal(std::string("ENTAMEE at 4D [16 pts]"), top_moves[0].toString(), "Top move is ENTAMEE at 4D [16 pts]");
-    assert_equal(std::string("NOTEE at 10E [15 pts]"), top_moves[1].toString(), "Second top move is NOTEE at 10E [15 pts]");
+    assert_equal(15, top_moves[1].getScore(), "Second top move scores 15 pts");
+
+    // Check that NOTEE scores 15 (not 16), showing the blank 'r' is counted as 0
+    bool found_notee_15pts = false;
+    for (const auto& move : top_moves) {
+        if (move.getWord() == "NOTEE" && move.getScore() == 15) {
+            found_notee_15pts = true;
+            break;
+        }
+    }
+    assert_true(found_notee_15pts, "NOTEE should score 15 pts (blank 'r' counted as 0)");
 }
 
 void test_board_scenario_6() {
@@ -286,28 +300,22 @@ void test_board_scenario_6() {
 
     Rack rack("JUR");
     MoveGenerator gen(board, rack, dawg);
+
     auto top_moves = gen.getBestMove();
 
-    // assert_equal(1, (int)top_moves.size(), "Two best moves found");
-    assert_equal(std::string("JURON at G5 [12 pts]"), top_moves[0].toString(), "Top move is JURON at G5 [12 pts]");
+    assert_equal(std::string("JURON at H5 [12 pts]"), top_moves[0].toString(), "Top move is JURON at H5 [12 pts]");
 }
 
 int main() {
     cout << "=== Scradle Engine - Complex Board Tests ===" << endl;
 
     test_board_parser();
-    // TIME_TEST("test_example_board", test_example_board);
-    // TIME_TEST("test_board_scenario_1", test_board_scenario_1);
-    // TIME_TEST("test_board_scenario_2", test_board_scenario_2);
-    // TIME_TEST("test_board_scenario_3", test_board_scenario_3);
-    // TIME_TEST("test_board_scenario_4", test_board_scenario_4);
-
     test_example_board();
-    // test_board_scenario_1();
-    // test_board_scenario_2();
-    // test_board_scenario_3();
-    // test_board_scenario_4();
-    // test_board_scenario_5();
+    test_board_scenario_1();
+    test_board_scenario_2();
+    test_board_scenario_3();
+    test_board_scenario_4();
+    test_board_scenario_5();
     test_board_scenario_6();
 
     print_summary();

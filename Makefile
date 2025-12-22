@@ -23,8 +23,11 @@ TEST_SCORER_TARGET = $(BIN_DIR)/test_scorer
 TEST_BLANKS_TARGET = $(BIN_DIR)/test_blanks
 TEST_INTEGRATION_TARGET = $(BIN_DIR)/test_integration
 TEST_COMPLEX_TARGET = $(BIN_DIR)/test_complex_board
+TEST_TILE_BAG_TARGET = $(BIN_DIR)/test_tile_bag
+TEST_GAME_STATE_TARGET = $(BIN_DIR)/test_game_state
+TEST_DUPLICATE_GAME_TARGET = $(BIN_DIR)/test_duplicate_game
 
-.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-all dirs
+.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-tile-bag test-game-state test-duplicate-game test-all dirs
 
 all: dirs $(OBJECTS)
 
@@ -55,7 +58,16 @@ test-integration: dirs $(TEST_INTEGRATION_TARGET)
 test-complex: dirs $(TEST_COMPLEX_TARGET)
 	./$(TEST_COMPLEX_TARGET)
 
-test-all: test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex
+test-tile-bag: dirs $(TEST_TILE_BAG_TARGET)
+	./$(TEST_TILE_BAG_TARGET)
+
+test-game-state: dirs $(TEST_GAME_STATE_TARGET)
+	./$(TEST_GAME_STATE_TARGET)
+
+test-duplicate-game: dirs $(TEST_DUPLICATE_GAME_TARGET)
+	./$(TEST_DUPLICATE_GAME_TARGET)
+
+test-all: test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-tile-bag test-game-state test-duplicate-game
 
 $(TEST_BOARD_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_main.cpp
 	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_main.cpp -o $@
@@ -77,6 +89,15 @@ $(TEST_INTEGRATION_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DI
 
 $(TEST_COMPLEX_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_complex_board.cpp
 	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_complex_board.cpp -o $@
+
+$(TEST_TILE_BAG_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_tile_bag.cpp
+	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_tile_bag.cpp -o $@
+
+$(TEST_GAME_STATE_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_game_state.cpp
+	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_game_state.cpp -o $@
+
+$(TEST_DUPLICATE_GAME_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_duplicate_game.cpp
+	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_duplicate_game.cpp -o $@
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)

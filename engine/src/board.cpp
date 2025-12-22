@@ -163,8 +163,8 @@ Board Board::parseBoard(const std::string& ascii) {
                 // Empty cell - already initialized
                 col++;
             } else if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
-                // Letter tile
-                board.setLetter(row, col, toupper(c));
+                // Letter tile - preserve case (lowercase = blank)
+                board.setLetter(row, col, c);
                 col++;
             }
             // Ignore other characters

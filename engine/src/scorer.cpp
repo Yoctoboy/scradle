@@ -196,6 +196,12 @@ int Scorer::scoreCrossWords(const Board& board, const Move& move) const {
                 if (r == row && c == col) {
                     letter = placement.letter;
                     is_blank = placement.is_blank;
+                } else {
+                    // Check if existing tile on board is a blank (lowercase)
+                    is_blank = (letter >= 'a' && letter <= 'z');
+                    if (is_blank) {
+                        letter = toupper(letter);  // Convert to uppercase for scoring lookup
+                    }
                 }
 
                 // Calculate letter value: 0 for blanks, normal value otherwise
