@@ -192,7 +192,7 @@ void test_board_scenario_3() {
 }
 
 void test_board_scenario_4() {
-    cout << "\n=== Test: Example Complex Board 4 ===" << endl;
+    cout << "\n=== Test: Example Complex Board 3 ===" << endl;
 
     // Example board - replace with your own test cases
     Board board = Board::parseBoard(R"(
