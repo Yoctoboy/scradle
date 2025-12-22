@@ -1,11 +1,12 @@
+#include <iostream>
+
 #include "board.h"
-#include "rack.h"
+#include "dawg.h"
 #include "move.h"
 #include "move_generator.h"
-#include "dawg.h"
+#include "rack.h"
 #include "scorer.h"
 #include "test_framework.h"
-#include <iostream>
 
 using namespace scradle;
 using namespace test;
@@ -113,8 +114,8 @@ void test_blank_on_board_recognition() {
     // Create a manual move that uses the blank on board
     Move move(7, 7, Direction::HORIZONTAL, "BAT");
     move.addPlacement(TilePlacement(7, 7, 'B', false, true));  // existing blank
-    move.addPlacement(TilePlacement(7, 8, 'A', true, false));   // new tile
-    move.addPlacement(TilePlacement(7, 9, 'T', true, false));   // new tile
+    move.addPlacement(TilePlacement(7, 8, 'A', true, false));  // new tile
+    move.addPlacement(TilePlacement(7, 9, 'T', true, false));  // new tile
 
     // Score should reflect that B is a blank (0 points), and DW doesn't apply since B is existing
     // B=0 (blank, existing), A=1, T=1 = 2 points total
@@ -132,7 +133,7 @@ void test_blank_on_board_in_generated_move() {
     dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
 
     // Place a blank 'o' on the board at center (lowercase = blank)
-    board.setLetter(7, 7, 'o');
+    board.setLetter(7, 7, 'O');
 
     // Place 'N' next to it so we have "ON" on board (with blank 'o')
     board.setLetter(7, 8, 'N');

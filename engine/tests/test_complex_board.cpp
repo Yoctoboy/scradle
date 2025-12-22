@@ -222,7 +222,7 @@ void test_board_scenario_4() {
 
     assert_equal(2, (int)top_moves.size(), "Two best moves found");
     assert_equal(std::string("THUGS at G11 [29 pts]"), top_moves[0].toString(), "Top move is THUGS at G11 [29 pts]");
-    assert_equal(std::string("CHUS at I5 [29 pts]"), top_moves[1].toString(), "Top move is CHUS at I5 [29 pts]");
+    assert_equal(std::string("CHUS at I5 [29 pts]"), top_moves[1].toString(), "Second top move is CHUS at I5 [29 pts]");
 }
 
 void test_board_scenario_5() {
@@ -256,7 +256,40 @@ void test_board_scenario_5() {
 
     // assert_equal(1, (int)top_moves.size(), "Two best moves found");
     assert_equal(std::string("ENTAMEE at 4D [16 pts]"), top_moves[0].toString(), "Top move is ENTAMEE at 4D [16 pts]");
-    assert_equal(std::string("NOTEE at 10E [15 pts]"), top_moves[1].toString(), "Top move is NOTEE at 10E [15 pts]");
+    assert_equal(std::string("NOTEE at 10E [15 pts]"), top_moves[1].toString(), "Second top move is NOTEE at 10E [15 pts]");
+}
+
+void test_board_scenario_6() {
+    cout << "\n=== Test: Example Complex Board 6 ===" << endl;
+
+    // Example board - replace with your own test cases
+    Board board = Board::parseBoard(R"(
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        .......ON......
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+    )");
+
+    DAWG dawg;
+    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
+
+    Rack rack("JUR");
+    MoveGenerator gen(board, rack, dawg);
+    auto top_moves = gen.getBestMove();
+
+    // assert_equal(1, (int)top_moves.size(), "Two best moves found");
+    assert_equal(std::string("JURON at G5 [12 pts]"), top_moves[0].toString(), "Top move is JURON at G5 [12 pts]");
 }
 
 int main() {
@@ -273,8 +306,9 @@ int main() {
     // test_board_scenario_1();
     // test_board_scenario_2();
     // test_board_scenario_3();
-    test_board_scenario_4();
-    test_board_scenario_5();
+    // test_board_scenario_4();
+    // test_board_scenario_5();
+    test_board_scenario_6();
 
     print_summary();
 
