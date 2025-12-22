@@ -693,10 +693,10 @@ void test_is_valid_move_main_word() {
 
         if (is_valid) {
             valid_count++;
-            assert_equal(string("CAT"), main_word, "Valid move should be CAT");
+            assert_equal(string("CAT"), main_word, "Valid move should be CAT", false);
         } else {
             invalid_count++;
-            assert_true(main_word != "CAT", "Invalid move should not be CAT");
+            assert_true(main_word != "CAT", "Invalid move should not be CAT", false);
         }
     }
 
@@ -823,10 +823,10 @@ void test_word_validation() {
     // Every generated move MUST be in the DAWG
     for (const auto& move : moves) {
         assert_true(dawg.contains(move.getWord()),
-                    "Generated word '" + move.getWord() + "' must be valid");
+                    "Generated word '" + move.getWord() + "' must be valid", false);
 
         // Also verify it's not a random invalid combination
-        assert_true(move.getWord().length() >= 2, "Words should be at least 2 letters");
+        assert_true(move.getWord().length() >= 2, "Words should be at least 2 letters", false);
     }
 }
 

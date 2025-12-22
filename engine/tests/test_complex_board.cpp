@@ -225,15 +225,56 @@ void test_board_scenario_4() {
     assert_equal(std::string("CHUS at I5 [29 pts]"), top_moves[1].toString(), "Top move is CHUS at I5 [29 pts]");
 }
 
+void test_board_scenario_5() {
+    cout << "\n=== Test: Example Complex Board 4 ===" << endl;
+
+    // Example board - replace with your own test cases
+    Board board = Board::parseBoard(R"(
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        ...MOrGUE......
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+        ...............
+    )");
+
+    DAWG dawg;
+    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
+
+    Rack rack("TEONAEE");
+    MoveGenerator gen(board, rack, dawg);
+    auto top_moves = gen.getTopMoves(2);
+
+    // assert_equal(1, (int)top_moves.size(), "Two best moves found");
+    assert_equal(std::string("ENTAMEE at 4D [16 pts]"), top_moves[0].toString(), "Top move is ENTAMEE at 4D [16 pts]");
+    assert_equal(std::string("NOTEE at 10E [15 pts]"), top_moves[1].toString(), "Top move is NOTEE at 10E [15 pts]");
+}
+
 int main() {
     cout << "=== Scradle Engine - Complex Board Tests ===" << endl;
 
     test_board_parser();
-    TIME_TEST("test_example_board", test_example_board);
-    TIME_TEST("test_board_scenario_1", test_board_scenario_1);
-    TIME_TEST("test_board_scenario_2", test_board_scenario_2);
-    TIME_TEST("test_board_scenario_3", test_board_scenario_3);
-    TIME_TEST("test_board_scenario_4", test_board_scenario_4);
+    // TIME_TEST("test_example_board", test_example_board);
+    // TIME_TEST("test_board_scenario_1", test_board_scenario_1);
+    // TIME_TEST("test_board_scenario_2", test_board_scenario_2);
+    // TIME_TEST("test_board_scenario_3", test_board_scenario_3);
+    // TIME_TEST("test_board_scenario_4", test_board_scenario_4);
+
+    test_example_board();
+    // test_board_scenario_1();
+    // test_board_scenario_2();
+    // test_board_scenario_3();
+    test_board_scenario_4();
+    test_board_scenario_5();
 
     print_summary();
 

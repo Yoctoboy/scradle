@@ -60,11 +60,11 @@ inline void assert_false(bool condition, const string& test_name, const bool dis
 
 // Assert that two values are equal
 template <typename T>
-inline void assert_equal(const T& expected, const T& actual, const string& test_name) {
+inline void assert_equal(const T& expected, const T& actual, const string& test_name, const bool display_on_success = true) {
     tests_run++;
     if (expected == actual) {
         tests_passed++;
-        cout << color::GREEN << "  ✓ " << color::RESET << test_name << endl;
+        if (display_on_success) cout << color::GREEN << "  ✓ " << color::RESET << test_name << endl;
     } else {
         tests_failed++;
         cout << color::RED << "  ✗ " << test_name << " - FAILED" << color::RESET << endl;
