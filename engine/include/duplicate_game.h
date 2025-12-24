@@ -1,6 +1,8 @@
 #ifndef SCRADLE_DUPLICATE_GAME_H
 #define SCRADLE_DUPLICATE_GAME_H
 
+#include <random>
+
 #include "dawg.h"
 #include "game_state.h"
 #include "move_generator.h"
@@ -29,6 +31,7 @@ class DuplicateGame {
     const DAWG& dawg_;
     GameState state_;
     Scorer scorer_;
+    std::mt19937 rng_;  // Random number generator for tie-breaking
 
     // Find and play the best move from current state
     // Returns true if a move was played, false if no valid moves

@@ -2,11 +2,12 @@
 
 #include <algorithm>
 #include <iostream>
+#include <random>
 
 namespace scradle {
 
 DuplicateGame::DuplicateGame(const DAWG& dawg, unsigned int seed)
-    : dawg_(dawg), state_(seed), scorer_() {}
+    : dawg_(dawg), state_(seed), scorer_(), rng_(seed) {}
 
 void DuplicateGame::playGame(bool display) {
     // Initialize game
@@ -56,18 +57,26 @@ bool DuplicateGame::findAndPlayBestMove(bool display) {
         return false;
     }
 
-    // Select the move to play
-    Move selected_move = best_moves[0];
-
-    // For the first move, prefer horizontal moves
+    // Filter moves based on move number
+    std::vector<Move> candidates;
     if (state_.getMoveCount() == 0) {
+        // For the first move, prefer horizontal moves
         for (const auto& move : best_moves) {
             if (move.getDirection() == Direction::HORIZONTAL) {
-                selected_move = move;
-                break;
+                candidates.push_back(move);
             }
         }
+        // If no horizontal moves, use all moves
+        if (candidates.empty()) {
+            candidates = best_moves;
+        }
+    } else {
+        candidates = best_moves;
     }
+
+    // Randomly select from candidates
+    std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
+    Move selected_move = candidates[dist(rng_)];
 
     state_.applyMove(selected_move);
     if (display) std::cout << " -- move: " << selected_move.toString() << std::endl;

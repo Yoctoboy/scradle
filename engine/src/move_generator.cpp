@@ -182,10 +182,6 @@ vector<StartPosition> MoveGenerator::findStartPositions() const {
     return positions;
 }
 
-// ============================================================================
-// STEP 2: Generate all raw moves (stub for now)
-// ============================================================================
-
 vector<RawMove> MoveGenerator::generateAllRawMoves(const vector<StartPosition>& positions) const {
     vector<RawMove> raw_moves;
 
@@ -325,10 +321,6 @@ RawMove MoveGenerator::createRawMove(
 
     return move;
 }
-
-// ============================================================================
-// STEP 3: Validate moves (stub for now)
-// ============================================================================
 
 vector<Move> MoveGenerator::filterValidMoves(const vector<RawMove>& raw_moves) const {
     vector<Move> valid_moves;
