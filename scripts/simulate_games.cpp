@@ -94,6 +94,10 @@ int main(int argc, char* argv[]) {
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < num_games; i++) {
         unsigned int seed = seeds[i];
+#pragma omp critical
+        {
+            cout << "Starting Game " << (i + 1) << "/" << num_games << " with seed " << seed << endl;
+        }
 
         auto game_start = chrono::high_resolution_clock::now();
 
