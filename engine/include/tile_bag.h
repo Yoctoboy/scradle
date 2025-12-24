@@ -35,6 +35,11 @@ public:
     bool hasVowels() const;
     bool hasConsonants() const;
 
+    // Check if bag has enough vowels and consonants to make a valid rack
+    // Before move 15: needs >= 2 vowels AND >= 2 consonants
+    // After move 15: needs >= 1 vowel AND >= 1 consonant
+    bool canMakeValidRack(int move_count) const;
+
     // Reset the bag to initial state with same seed
     void reset();
 
@@ -44,8 +49,10 @@ public:
     // Get current state for debugging
     std::string toString() const;
 
-    // Helper to check if a letter is a vowel
+    // Helpers to check letter types
+    // Blanks ('?') count as both vowel and consonant
     static bool isVowel(char letter);
+    static bool isConsonant(char letter);
 
 private:
     std::vector<char> tiles_;

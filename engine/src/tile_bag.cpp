@@ -141,8 +141,36 @@ std::string TileBag::toString() const {
 }
 
 bool TileBag::isVowel(char letter) {
-    return letter == 'A' || letter == 'E' || letter == 'I' ||
+    return letter == '?' ||
+           letter == 'A' || letter == 'E' || letter == 'I' ||
            letter == 'O' || letter == 'U' || letter == 'Y';
+}
+
+bool TileBag::isConsonant(char letter) {
+    return letter == '?' || !isVowel(letter);
+}
+
+bool TileBag::canMakeValidRack(int move_count) const {
+    int vowels = 0;
+    int consonants = 0;
+
+    for (char tile : tiles_) {
+        if (isVowel(tile)) {
+            vowels++;
+        }
+        if (isConsonant(tile)) {
+            consonants++;
+        }
+    }
+
+    // Before move 15 (moves 0-15): need at least 2 vowels AND 2 consonants
+    if (move_count <= 15) {
+        return vowels >= 2 && consonants >= 2;
+    }
+    // After move 15 (moves 16+): need at least 1 vowel AND 1 consonant
+    else {
+        return vowels >= 1 && consonants >= 1;
+    }
 }
 
 }  // namespace scradle

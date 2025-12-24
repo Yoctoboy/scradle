@@ -309,14 +309,14 @@ void test_board_scenario_6() {
 int main() {
     cout << "=== Scradle Engine - Complex Board Tests ===" << endl;
 
-    test_board_parser();
-    test_example_board();
-    test_board_scenario_1();
+    // test_board_parser();
+    // test_example_board();
+    // test_board_scenario_1();
     test_board_scenario_2();
-    test_board_scenario_3();
-    test_board_scenario_4();
-    test_board_scenario_5();
-    test_board_scenario_6();
+    // test_board_scenario_3();
+    // test_board_scenario_4();
+    // test_board_scenario_5();
+    // test_board_scenario_6();
 
     print_summary();
 

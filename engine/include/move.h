@@ -1,9 +1,9 @@
 #ifndef SCRADLE_MOVE_H
 #define SCRADLE_MOVE_H
 
+#include <ostream>
 #include <string>
 #include <vector>
-#include <ostream>
 
 namespace scradle {
 
@@ -16,9 +16,12 @@ enum class Direction {
 // Stream operator for Direction (for testing and debugging)
 inline std::ostream& operator<<(std::ostream& os, Direction dir) {
     switch (dir) {
-        case Direction::HORIZONTAL: return os << "HORIZONTAL";
-        case Direction::VERTICAL:   return os << "VERTICAL";
-        default:                    return os << "UNKNOWN";
+        case Direction::HORIZONTAL:
+            return os << "HORIZONTAL";
+        case Direction::VERTICAL:
+            return os << "VERTICAL";
+        default:
+            return os << "UNKNOWN";
     }
 }
 
@@ -36,7 +39,7 @@ struct TilePlacement {
 
 // Represents a complete Scrabble move
 class Move {
-public:
+   public:
     Move();
     Move(int start_row, int start_col, Direction dir, const std::string& word);
 
@@ -55,8 +58,9 @@ public:
     // Utility
     bool isValid() const;
     std::string toString() const;
+    bool isBingo() const;
 
-private:
+   private:
     int start_row_;
     int start_col_;
     Direction direction_;
@@ -65,6 +69,6 @@ private:
     int score_;
 };
 
-} // namespace scradle
+}  // namespace scradle
 
-#endif // SCRADLE_MOVE_H
+#endif  // SCRADLE_MOVE_H

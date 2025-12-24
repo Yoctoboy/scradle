@@ -20,6 +20,17 @@ bool Move::isValid() const {
     return !word_.empty() && !placements_.empty();
 }
 
+bool Move::isBingo() const {
+    // Count tiles placed from rack
+    int tiles_from_rack = 0;
+    for (const auto& placement : getPlacements()) {
+        if (placement.is_from_rack) {
+            tiles_from_rack++;
+        }
+    }
+    return tiles_from_rack == 7;
+}
+
 std::string Move::toString() const {
     std::stringstream ss;
 
@@ -34,6 +45,10 @@ std::string Move::toString() const {
     }
 
     ss << " [" << score_ << " pts]";
+
+    if (isBingo()) {
+        ss << " [BINGO]";
+    }
     return ss.str();
 }
 

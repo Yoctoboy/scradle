@@ -170,6 +170,91 @@ void test_game_state_move_history() {
     assert_equal(25, state.getTotalScore(), "Total score should be 25");
 }
 
+void test_rack_validity_before_move_15() {
+    cout << "\n"
+         << color::BLUE << color::BOLD << "=== Test: Rack Validity Before Move 15 ===" << color::RESET << endl;
+
+    // Test valid racks (before move 15)
+    Rack valid_rack1("AABBCCD");
+    assert_true(valid_rack1.isValid(0), "Rack with 2+ vowels and 2+ consonants should be valid");
+
+    Rack valid_rack2("EEIIRRR");
+    assert_true(valid_rack2.isValid(10), "Rack with 2+ vowels and 2+ consonants should be valid");
+
+    // Test with blanks (they count as both)
+    Rack valid_rack3("A?BBBBB");
+    assert_true(valid_rack3.isValid(5), "Rack with blank counting as vowel should be valid");
+
+    Rack valid_rack4("AA?CCCC");
+    assert_true(valid_rack4.isValid(14), "Rack with blank should be valid");
+
+    // Test invalid racks (before move 15)
+    Rack invalid_rack1("ABBBBBB");
+    assert_false(invalid_rack1.isValid(0), "Rack with only 1 vowel should be invalid before move 15");
+
+    Rack invalid_rack2("AAAAAAB");
+    assert_false(invalid_rack2.isValid(10), "Rack with only 1 consonant should be invalid before move 15");
+
+    Rack invalid_rack3("AAAAAAA");
+    assert_false(invalid_rack3.isValid(5), "Rack with no consonants should be invalid");
+
+    Rack invalid_rack4("BBBBBBB");
+    assert_false(invalid_rack4.isValid(14), "Rack with no vowels should be invalid");
+}
+
+void test_rack_validity_after_move_15() {
+    cout << "\n"
+         << color::BLUE << color::BOLD << "=== Test: Rack Validity After Move 15 ===" << color::RESET << endl;
+
+    // Test valid racks (after move 15)
+    Rack valid_rack1("ABBBBBB");
+    assert_true(valid_rack1.isValid(16), "Rack with 1+ vowels and 1+ consonants should be valid after move 15");
+
+    Rack valid_rack2("AAAAAAB");
+    assert_true(valid_rack2.isValid(20), "Rack with 1+ vowels and 1+ consonants should be valid after move 15");
+
+    Rack valid_rack3("AB");
+    assert_true(valid_rack3.isValid(50), "Rack with 1 vowel and 1 consonant should be valid");
+
+    // Test with blanks
+    Rack valid_rack4("?BBBBBB");
+    assert_true(valid_rack4.isValid(16), "Rack with blank should be valid");
+
+    // Test invalid racks (after move 15)
+    Rack invalid_rack1("AAAAAAA");
+    assert_false(invalid_rack1.isValid(16), "Rack with no consonants should be invalid");
+
+    Rack invalid_rack2("BBBBBBB");
+    assert_false(invalid_rack2.isValid(20), "Rack with no vowels should be invalid");
+}
+
+void test_refill_rack_handles_invalid_racks() {
+    cout << "\n"
+         << color::BLUE << color::BOLD << "=== Test: Refill Rack Handles Invalid Racks ===" << color::RESET << endl;
+
+    // Use a specific seed to test invalid rack handling
+    GameState state(12345);
+    state.refillRack();
+
+    // Rack should be valid after refill (before move 15)
+    assert_true(state.getRack().isValid(0), "Initial rack should be valid");
+
+    // Simulate several moves
+    for (int i = 0; i < 5; i++) {
+        Move move(7 + i, 7, Direction::HORIZONTAL, "A");
+        move.setScore(1);
+        state.applyMove(move);
+
+        // Remove a tile and refill
+        state.getRack().removeTile(state.getRack().getTile(0));
+        state.refillRack();
+
+        // Rack should still be valid after each refill
+        int move_count = state.getMoveCount();
+        assert_true(state.getRack().isValid(move_count), "Rack should be valid after refill");
+    }
+}
+
 int main() {
     cout << "=== GameState Tests ===" << endl;
 
@@ -180,6 +265,9 @@ int main() {
     test_game_state_is_game_over();
     test_game_state_reset();
     test_game_state_move_history();
+    test_rack_validity_before_move_15();
+    test_rack_validity_after_move_15();
+    test_refill_rack_handles_invalid_racks();
 
     print_summary();
     return exit_code();

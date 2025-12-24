@@ -16,7 +16,7 @@ class DuplicateGame {
     explicit DuplicateGame(const DAWG& dawg, unsigned int seed = 0);
 
     // Run a complete game from start to finish
-    void playGame();
+    void playGame(bool display = false);
 
     // Step-by-step execution (for debugging/visualization)
     bool playNextMove();  // Returns false when game is over
@@ -32,7 +32,7 @@ class DuplicateGame {
 
     // Find and play the best move from current state
     // Returns true if a move was played, false if no valid moves
-    bool findAndPlayBestMove();
+    bool findAndPlayBestMove(bool display = false);
 
     // Check if game should terminate
     // Returns true if:

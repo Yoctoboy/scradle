@@ -19,7 +19,7 @@ void GameState::applyMove(const Move& move) {
 
     // Update statistics
     total_score_ += move.getScore();
-    if (isBingo(move)) {
+    if (move.isBingo()) {
         bingo_count_++;
     }
 
@@ -31,6 +31,22 @@ void GameState::refillRack() {
     int tiles_needed = Rack::MAX_TILES - rack_.size();
     if (tiles_needed > 0) {
         std::string new_tiles = tile_bag_.drawTiles(tiles_needed);
+        for (char tile : new_tiles) {
+            rack_.addTile(tile);
+        }
+    }
+
+    // Check if the rack is valid according to the rules
+    // If invalid and the bag can potentially make a valid rack, return tiles and try again
+    int move_count = getMoveCount();
+    while (!rack_.isValid(move_count) && tile_bag_.canMakeValidRack(move_count)) {
+        // Return all tiles to the bag
+        std::string rack_tiles = rack_.getTiles();
+        tile_bag_.returnTiles(rack_tiles);
+        rack_.clear();
+
+        // Draw 7 new tiles (or as many as available)
+        std::string new_tiles = tile_bag_.drawTiles(Rack::MAX_TILES);
         for (char tile : new_tiles) {
             rack_.addTile(tile);
         }
@@ -82,36 +98,16 @@ void GameState::printSummary() const {
     std::cout << "Moves: " << move_history_.size() << "\n";
     std::cout << "Bingos: " << bingo_count_ << "\n\n";
 
-    if (!move_history_.empty()) {
-        std::cout << "Move History:\n";
-        for (size_t i = 0; i < move_history_.size(); ++i) {
-            const Move& move = move_history_[i];
-            std::cout << (i + 1) << ". " << move.getWord() << " ("
-                      << move.getStartRow() << "," << move.getStartCol() << ") "
-                      << (move.getDirection() == Direction::HORIZONTAL ? "H" : "V") << " - "
-                      << move.getScore() << " pts";
-
-            // Mark bingos
-            if (isBingo(move)) {
-                std::cout << " [BINGO]";
-            }
-            std::cout << "\n";
-        }
-    }
+    // if (!move_history_.empty()) {
+    //     std::cout << "Move History:\n";
+    //     for (size_t i = 0; i < move_history_.size(); ++i) {
+    //         const Move& move = move_history_[i];
+    //         std::cout << (i + 1) << ". " << move.toString() << std::endl;
+    //     }
+    // }
 
     std::cout << "\nFinal Board:\n";
     board_.display();
-}
-
-bool GameState::isBingo(const Move& move) const {
-    // Count tiles placed from rack
-    int tiles_from_rack = 0;
-    for (const auto& placement : move.getPlacements()) {
-        if (placement.is_from_rack) {
-            tiles_from_rack++;
-        }
-    }
-    return tiles_from_rack == 7;
 }
 
 }  // namespace scradle

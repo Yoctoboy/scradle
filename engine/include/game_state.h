@@ -1,13 +1,13 @@
 #ifndef SCRADLE_GAME_STATE_H
 #define SCRADLE_GAME_STATE_H
 
+#include <string>
+#include <vector>
+
 #include "board.h"
 #include "move.h"
 #include "rack.h"
 #include "tile_bag.h"
-
-#include <string>
-#include <vector>
 
 namespace scradle {
 
@@ -31,6 +31,7 @@ class GameState {
     void applyMove(const Move& move);
 
     // Refill rack from tile bag (up to 7 tiles)
+    // Checks for invalid racks and returns them to bag if necessary
     void refillRack();
 
     // Game status
@@ -58,9 +59,6 @@ class GameState {
     int total_score_;
     int bingo_count_;
     std::vector<Move> move_history_;
-
-    // Helper to check if move is a bingo (7 tiles)
-    bool isBingo(const Move& move) const;
 };
 
 }  // namespace scradle

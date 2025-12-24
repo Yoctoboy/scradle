@@ -68,63 +68,18 @@ void Board::display() const {
 string Board::toString() const {
     stringstream ss;
 
-    // Column headers (A-O)
-    ss << "    ";
-    for (int col = 0; col < SIZE; ++col) {
-        ss << " " << static_cast<char>('A' + col) << " ";
-    }
-    ss << "\n";
-
-    // Top border
-    ss << "   +";
-    for (int col = 0; col < SIZE; ++col) {
-        ss << "--+";
-    }
-    ss << "\n";
-
-    // Board rows (1-15)
     for (int row = 0; row < SIZE; ++row) {
-        ss << setw(2) << (row + 1) << " |";
-
         for (int col = 0; col < SIZE; ++col) {
             const Cell& cell = getCell(row, col);
 
             if (!cell.isEmpty()) {
-                // Display letter
-                ss << " " << cell.letter << "|";
+                ss << cell.letter;
             } else {
-                // Display premium square symbol
-                char symbol = ' ';
-                switch (cell.premium) {
-                    case PremiumType::TRIPLE_WORD:
-                        symbol = '*';
-                        break;
-                    case PremiumType::DOUBLE_WORD:
-                        symbol = '=';
-                        break;
-                    case PremiumType::TRIPLE_LETTER:
-                        symbol = '^';
-                        break;
-                    case PremiumType::DOUBLE_LETTER:
-                        symbol = '"';
-                        break;
-                    case PremiumType::NONE:
-                        symbol = ' ';
-                        break;
-                }
-                ss << " " << symbol << "|";
+                ss << '.';
             }
-        }
-
-        ss << "\n   +";
-        for (int col = 0; col < SIZE; ++col) {
-            ss << "--+";
         }
         ss << "\n";
     }
-
-    ss << "\nLegend: * = TW (Triple Word), = = DW (Double Word)\n";
-    ss << "        ^ = TL (Triple Letter), \" = DL (Double Letter)\n";
 
     return ss.str();
 }

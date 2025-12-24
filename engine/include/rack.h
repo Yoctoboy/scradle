@@ -17,12 +17,20 @@ public:
     int size() const { return tiles_.size(); }
     char getTile(int index) const;
     void setTiles(const std::string& tiles);
+    const std::string& getTiles() const { return tiles_; }
+    void clear() { tiles_.clear(); }
 
     // Tile operations
     bool hasTile(char letter) const;
     int countTile(char letter) const;
     void removeTile(char letter);
     void addTile(char letter);
+
+    // Validation
+    // Check if rack is valid based on move count
+    // Before move 15: needs >= 2 vowels AND >= 2 consonants
+    // After move 15: needs >= 1 vowel AND >= 1 consonant
+    bool isValid(int move_count) const;
 
     // Display
     std::string toString() const;

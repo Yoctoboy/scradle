@@ -1,8 +1,9 @@
-#include "board.h"
-#include "scorer.h"
-#include "move.h"
-#include "test_framework.h"
 #include <iostream>
+
+#include "board.h"
+#include "move.h"
+#include "scorer.h"
+#include "test_framework.h"
 
 using namespace scradle;
 using namespace test;
@@ -251,14 +252,36 @@ void test_blank_tile_basic() {
 
     // Place "CAT" with C as a blank (worth 0 points)
     Move move(7, 7, Direction::HORIZONTAL, "CAT");
-    move.addPlacement(TilePlacement(7, 7, 'C', true, true));  // blank as C
-    move.addPlacement(TilePlacement(7, 8, 'A', true, false)); // regular A
-    move.addPlacement(TilePlacement(7, 9, 'T', true, false)); // regular T
+    move.addPlacement(TilePlacement(7, 7, 'C', true, true));   // blank as C
+    move.addPlacement(TilePlacement(7, 8, 'A', true, false));  // regular A
+    move.addPlacement(TilePlacement(7, 9, 'T', true, false));  // regular T
 
     // C=0 (blank), A=1, T=1 = 2 points base
     // Center DW at (7,7): 2 * 2 = 4 points
     int score = scorer.scoreMove(board, move);
     assert_equal(4, score, "CAT with blank C on center should score 4 points (2 * 2 for DW)");
+}
+
+void test_blank_tile_already_placed() {
+    cout << "\n=== Test: Blank Tile Already Placed ===" << endl;
+
+    Board board;
+    Scorer scorer;
+
+    board.setLetter(1, 7, 'n');
+
+    // Place "CAT" with C as a blank (worth 0 points)
+    Move move(1, 2, Direction::HORIZONTAL, "TAUZIn");
+    move.addPlacement(TilePlacement(1, 2, 'T', true, false));
+    move.addPlacement(TilePlacement(1, 3, 'A', true, false));
+    move.addPlacement(TilePlacement(1, 4, 'U', true, false));
+    move.addPlacement(TilePlacement(1, 5, 'Z', true, false));
+    move.addPlacement(TilePlacement(1, 6, 'I', true, false));
+
+    // C=0 (blank), A=1, T=1 = 2 points base
+    // Center DW at (7,7): 2 * 2 = 4 points
+    int score = scorer.scoreMove(board, move);
+    assert_equal(34, score, "Should not count already placed blank tile");
 }
 
 void test_blank_on_premium_square() {
@@ -308,7 +331,7 @@ void test_blank_on_board() {
 
     // Add "AT" to make "CAT"
     Move move(7, 7, Direction::HORIZONTAL, "CAT");
-    move.addPlacement(TilePlacement(7, 7, 'C', false, true)); // existing blank
+    move.addPlacement(TilePlacement(7, 7, 'C', false, true));  // existing blank
     move.addPlacement(TilePlacement(7, 8, 'A', true, false));
     move.addPlacement(TilePlacement(7, 9, 'T', true, false));
 
@@ -333,6 +356,7 @@ int main() {
     test_premium_not_reused();
     test_high_value_letters();
     test_blank_tile_basic();
+    test_blank_tile_already_placed();
     test_blank_on_premium_square();
     test_multiple_blanks();
     test_blank_on_board();

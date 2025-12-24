@@ -1,4 +1,5 @@
 #include "scorer.h"
+
 #include <cctype>
 
 namespace scradle {
@@ -102,6 +103,11 @@ int Scorer::scoreMainWord(const Board& board, const Move& move) const {
             }
         }
 
+        if (!is_new_tile) {
+            char letter = board.getLetter(row, col);
+            is_blank = letter >= 'a' && letter <= 'z';
+        }
+
         // Calculate letter value: 0 for blanks, normal value otherwise
         int letter_value = is_blank ? 0 : getLetterValue(letter);
 
@@ -155,8 +161,8 @@ int Scorer::scoreCrossWords(const Board& board, const Move& move) const {
 
         // Determine the perpendicular direction
         Direction cross_dir = (main_dir == Direction::HORIZONTAL)
-                            ? Direction::VERTICAL
-                            : Direction::HORIZONTAL;
+                                  ? Direction::VERTICAL
+                                  : Direction::HORIZONTAL;
 
         // Find the start and end of the cross-word
         int start_row = row, start_col = col;
@@ -256,4 +262,4 @@ bool Scorer::isBingo(const Move& move) const {
     return tiles_from_rack == 7;
 }
 
-} // namespace scradle
+}  // namespace scradle

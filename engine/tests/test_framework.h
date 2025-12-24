@@ -97,7 +97,7 @@ inline int exit_code() {
 // Helper macro to time a test function (runs 10 times, shows min/max/avg)
 #define TIME_TEST(name, test_func)                                                                                     \
     do {                                                                                                               \
-        const int NUM_RUNS = 10;                                                                                       \
+        const int NUM_RUNS = 5;                                                                                        \
         long long min_time = LLONG_MAX;                                                                                \
         long long max_time = 0;                                                                                        \
         long long total_time = 0;                                                                                      \

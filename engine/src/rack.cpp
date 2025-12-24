@@ -1,11 +1,14 @@
 #include "rack.h"
+
 #include <algorithm>
 #include <cctype>
 
-using std::string;
-using std::toupper;
+#include "tile_bag.h"
+
 using std::count;
 using std::find;
+using std::string;
+using std::toupper;
 
 namespace scradle {
 
@@ -64,8 +67,35 @@ void Rack::addTile(char letter) {
     }
 }
 
+bool Rack::isValid(int move_count) const {
+    // Count vowels and consonants (blanks count as both)
+    int vowels = 0;
+    int consonants = 0;
+
+    for (char tile : tiles_) {
+        if (tile == '?') {
+            // Blanks count as both vowel and consonant
+            vowels++;
+            consonants++;
+        } else if (TileBag::isVowel(tile)) {
+            vowels++;
+        } else {
+            consonants++;
+        }
+    }
+
+    // Before move 15 (moves 0-15): need at least 2 vowels AND 2 consonants
+    if (move_count <= 15) {
+        return vowels >= 2 && consonants >= 2;
+    }
+    // After move 16 (moves 16+): need at least 1 vowel AND 1 consonant
+    else {
+        return vowels >= 1 && consonants >= 1;
+    }
+}
+
 string Rack::toString() const {
     return tiles_.empty() ? "(empty)" : tiles_;
 }
 
-} // namespace scradle
+}  // namespace scradle
