@@ -1,8 +1,8 @@
 # Scradle Engine Makefile
 
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -Iengine/include -Iengine/tests
-LDFLAGS =
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -Iengine/include -Iengine/tests -fopenmp
+LDFLAGS = -fopenmp
 
 # Directories
 SRC_DIR = engine/src
@@ -26,8 +26,10 @@ TEST_COMPLEX_TARGET = $(BIN_DIR)/test_complex_board
 TEST_TILE_BAG_TARGET = $(BIN_DIR)/test_tile_bag
 TEST_GAME_STATE_TARGET = $(BIN_DIR)/test_game_state
 TEST_DUPLICATE_GAME_TARGET = $(BIN_DIR)/test_duplicate_game
+SIMULATE_GAMES_TARGET = $(BIN_DIR)/simulate_games
+SINGLE_GAME_TARGET = $(BIN_DIR)/single_game
 
-.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-tile-bag test-game-state test-duplicate-game test-all dirs
+.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-tile-bag test-game-state test-duplicate-game test-all simulate single-game dirs
 
 all: dirs $(OBJECTS)
 
@@ -99,6 +101,18 @@ $(TEST_GAME_STATE_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR
 $(TEST_DUPLICATE_GAME_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_duplicate_game.cpp
 	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) $(TEST_DIR)/test_duplicate_game.cpp -o $@
 
+$(SIMULATE_GAMES_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/simulate_games.cpp
+	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/simulate_games.cpp -o $@
+
+$(SINGLE_GAME_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/single_game.cpp
+	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/single_game.cpp -o $@
+
+simulate: dirs $(SIMULATE_GAMES_TARGET)
+	./$(SIMULATE_GAMES_TARGET) $(ARGS)
+
+single-game: dirs $(SINGLE_GAME_TARGET)
+	./$(SINGLE_GAME_TARGET) $(ARGS)
+
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
@@ -118,5 +132,7 @@ help:
 	@echo "  make test-integration- Build and run integration tests (real game)"
 	@echo "  make test-complex    - Build and run complex board tests (custom scenarios)"
 	@echo "  make test-all        - Run all tests"
+	@echo "  make simulate ARGS=\"<num_games> <num_threads>\" - Simulate multiple games"
+	@echo "  make single-game ARGS=\"<seed>\" - Debug a single game with specific seed"
 	@echo "  make clean           - Remove build artifacts"
 	@echo "  make help            - Show this help message"
