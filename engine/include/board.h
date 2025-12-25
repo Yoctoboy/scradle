@@ -6,6 +6,7 @@
 #include <string>
 
 #include "cell.h"
+#include "move.h"
 
 namespace scradle {
 
@@ -31,6 +32,11 @@ class Board {
     // Board state
     bool isCenterOccupied() const;
     bool isBoardEmpty() const;
+
+    // Get existing prefix before a start position
+    // Returns letters already on board before the start position in the given direction
+    // Example: if board has "CAT" horizontally and start position is at the 'T', returns "CA"
+    std::string getExistingPrefix(const StartPosition& pos) const;
 
     // Display
     void display() const;

@@ -203,6 +203,7 @@ vector<RawMove> MoveGenerator::generateAllRawMoves(const vector<StartPosition>& 
 
     // For each start position, use only permutations with appropriate lengths
     for (const auto& pos : positions) {
+        string position_prefix = board_.getExistingPrefix(pos);
         for (const auto& perm : expanded_permutations) {
             int perm_len = perm.size();
             // Only use permutations within the min/max extension range

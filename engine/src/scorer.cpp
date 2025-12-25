@@ -259,7 +259,7 @@ bool Scorer::isBingo(const Move& move) const {
             tiles_from_rack++;
         }
     }
-    return tiles_from_rack == 7;
+    return tiles_from_rack >= 7;
 }
 
 }  // namespace scradle

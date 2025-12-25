@@ -25,6 +25,18 @@ inline std::ostream& operator<<(std::ostream& os, Direction dir) {
     }
 }
 
+// Represents a starting position for word placement
+struct StartPosition {
+    int row;
+    int col;
+    Direction direction;
+    int min_extension;  // Minimum tiles needed to connect to existing tiles
+    int max_extension;  // Maximum tiles that can be placed before hitting board edge
+
+    StartPosition(int r, int c, Direction dir, int min_ext, int max_ext)
+        : row(r), col(c), direction(dir), min_extension(min_ext), max_extension(max_ext) {}
+};
+
 // Represents a single tile placement in a move
 struct TilePlacement {
     int row;

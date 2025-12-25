@@ -61,6 +61,35 @@ bool Board::isAnchor(int row, int col) const {
     return isAnchor;
 }
 
+string Board::getExistingPrefix(const StartPosition& pos) const {
+    string prefix = "";
+    int row = pos.row;
+    int col = pos.col;
+
+    // Walk backwards from the start position collecting letters
+    if (pos.direction == Direction::HORIZONTAL) {
+        // Move left (decrement col)
+        col--;
+        while (col >= 0 && !isEmpty(row, col)) {
+            // Prepend each letter (we're walking backwards)
+            char letter = getLetter(row, col);
+            prefix = string(1, toupper(letter)) + prefix;
+            col--;
+        }
+    } else {  // VERTICAL
+        // Move up (decrement row)
+        row--;
+        while (row >= 0 && !isEmpty(row, col)) {
+            // Prepend each letter (we're walking backwards)
+            char letter = getLetter(row, col);
+            prefix = string(1, toupper(letter)) + prefix;
+            row--;
+        }
+    }
+
+    return prefix;
+}
+
 void Board::display() const {
     cout << toString() << endl;
 }

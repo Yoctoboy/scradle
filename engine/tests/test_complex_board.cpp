@@ -312,6 +312,7 @@ int main() {
     // test_board_parser();
     // test_example_board();
     // test_board_scenario_1();
+    // TIME_TEST("scenario 2", test_board_scenario_2);
     test_board_scenario_2();
     // test_board_scenario_3();
     // test_board_scenario_4();

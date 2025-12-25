@@ -52,6 +52,7 @@ The engine will be able to:
 - ✅ Cross-word scoring (perpendicular words formed by new tiles)
 - ✅ 50-point bonus for 7-tile words (bingo)
 - ✅ Main word scoring with letter and word multipliers
+- ✅ Find best move given a game state (grid and rack contents)
 - ✅ 37 passing tests covering all scoring scenarios
 
 ### Phase 5: Integration & Optimization
