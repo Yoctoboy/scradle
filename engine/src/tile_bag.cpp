@@ -12,49 +12,43 @@ TileBag::TileBag(unsigned int seed) : seed_(seed) {
     }
     rng_.seed(seed_);
     initializeTiles();
-    shuffle();
 }
 
 void TileBag::initializeTiles() {
     tiles_.clear();
-    tiles_.reserve(TOTAL_TILES);
 
-    // Vowels (52 total)
-    tiles_.insert(tiles_.end(), 9, 'A');
-    tiles_.insert(tiles_.end(), 15, 'E');
-    tiles_.insert(tiles_.end(), 8, 'I');
-    tiles_.insert(tiles_.end(), 6, 'O');
-    tiles_.insert(tiles_.end(), 6, 'U');
-    tiles_.insert(tiles_.end(), 1, 'Y');  // Y is a vowel in French
+    // Vowels (45 total)
+    for (int i = 0; i < 9; ++i) tiles_.insert('A');
+    for (int i = 0; i < 15; ++i) tiles_.insert('E');
+    for (int i = 0; i < 8; ++i) tiles_.insert('I');
+    for (int i = 0; i < 6; ++i) tiles_.insert('O');
+    for (int i = 0; i < 6; ++i) tiles_.insert('U');
+    tiles_.insert('Y');  // Y is a vowel in French
 
-    // Consonants (46 total)
-    tiles_.insert(tiles_.end(), 2, 'B');
-    tiles_.insert(tiles_.end(), 2, 'C');
-    tiles_.insert(tiles_.end(), 3, 'D');
-    tiles_.insert(tiles_.end(), 2, 'F');
-    tiles_.insert(tiles_.end(), 2, 'G');
-    tiles_.insert(tiles_.end(), 2, 'H');
-    tiles_.insert(tiles_.end(), 1, 'J');
-    tiles_.insert(tiles_.end(), 1, 'K');
-    tiles_.insert(tiles_.end(), 5, 'L');
-    tiles_.insert(tiles_.end(), 3, 'M');
-    tiles_.insert(tiles_.end(), 6, 'N');
-    tiles_.insert(tiles_.end(), 2, 'P');
-    tiles_.insert(tiles_.end(), 1, 'Q');
-    tiles_.insert(tiles_.end(), 6, 'R');
-    tiles_.insert(tiles_.end(), 6, 'S');
-    tiles_.insert(tiles_.end(), 6, 'T');
-    tiles_.insert(tiles_.end(), 2, 'V');
-    tiles_.insert(tiles_.end(), 1, 'W');
-    tiles_.insert(tiles_.end(), 1, 'X');
-    tiles_.insert(tiles_.end(), 1, 'Z');
+    // Consonants (55 total)
+    for (int i = 0; i < 2; ++i) tiles_.insert('B');
+    for (int i = 0; i < 2; ++i) tiles_.insert('C');
+    for (int i = 0; i < 3; ++i) tiles_.insert('D');
+    for (int i = 0; i < 2; ++i) tiles_.insert('F');
+    for (int i = 0; i < 2; ++i) tiles_.insert('G');
+    for (int i = 0; i < 2; ++i) tiles_.insert('H');
+    tiles_.insert('J');
+    tiles_.insert('K');
+    for (int i = 0; i < 5; ++i) tiles_.insert('L');
+    for (int i = 0; i < 3; ++i) tiles_.insert('M');
+    for (int i = 0; i < 6; ++i) tiles_.insert('N');
+    for (int i = 0; i < 2; ++i) tiles_.insert('P');
+    tiles_.insert('Q');
+    for (int i = 0; i < 6; ++i) tiles_.insert('R');
+    for (int i = 0; i < 6; ++i) tiles_.insert('S');
+    for (int i = 0; i < 6; ++i) tiles_.insert('T');
+    for (int i = 0; i < 2; ++i) tiles_.insert('V');
+    tiles_.insert('W');
+    tiles_.insert('X');
+    tiles_.insert('Z');
 
     // Blanks (2 total)
-    tiles_.insert(tiles_.end(), 2, '?');
-}
-
-void TileBag::shuffle() {
-    std::shuffle(tiles_.begin(), tiles_.end(), rng_);
+    for (int i = 0; i < 2; ++i) tiles_.insert('?');
 }
 
 std::string TileBag::drawTiles(int count) {
@@ -73,18 +67,40 @@ char TileBag::drawTile() {
         return '\0';
     }
 
-    char tile = tiles_.back();
-    tiles_.pop_back();
+    // Select a random tile from the multiset
+    std::uniform_int_distribution<size_t> dist(0, tiles_.size() - 1);
+    size_t random_index = dist(rng_);
+
+    auto it = tiles_.begin();
+    std::advance(it, random_index);
+    char tile = *it;
+    tiles_.erase(it);
     return tile;
+}
+
+char TileBag::drawTile(char letter) {
+    auto it = tiles_.find(letter);
+    if (it != tiles_.end()) {
+        tiles_.erase(it);
+        return letter;
+    }
+
+    // If the requested letter is not available, try to draw a joker
+    auto joker_it = tiles_.find('?');
+    if (joker_it != tiles_.end()) {
+        tiles_.erase(joker_it);
+        return '?';
+    }
+
+    return '\0';
 }
 
 void TileBag::returnTiles(const std::string& tiles) {
     for (char tile : tiles) {
         if (tile != '\0') {
-            tiles_.push_back(tile);
+            tiles_.insert(tile);
         }
     }
-    shuffle();
 }
 
 int TileBag::vowelCount() const {
@@ -100,7 +116,7 @@ int TileBag::vowelCount() const {
 int TileBag::consonantCount() const {
     int count = 0;
     for (char tile : tiles_) {
-        if (!isVowel(tile) && tile != '?') {
+        if (isConsonant(tile)) {
             ++count;
         }
     }
@@ -128,7 +144,6 @@ bool TileBag::hasConsonants() const {
 void TileBag::reset() {
     rng_.seed(seed_);
     initializeTiles();
-    shuffle();
 }
 
 std::string TileBag::toString() const {
@@ -171,6 +186,34 @@ bool TileBag::canMakeValidRack(int move_count) const {
     else {
         return vowels >= 1 && consonants >= 1;
     }
+}
+
+bool TileBag::contains(char letter) const {
+    return tiles_.find(letter) != tiles_.end();
+}
+
+bool TileBag::canDrawTiles(const std::string& letters) {
+    // Create a temporary copy of the tiles to simulate drawing
+    std::multiset<char> temp_tiles = tiles_;
+
+    for (char letter : letters) {
+        auto it = temp_tiles.find(letter);
+        if (it != temp_tiles.end()) {
+            // Letter is available, remove it from the temp set
+            temp_tiles.erase(it);
+        } else {
+            // Letter not available, try to use a joker
+            auto joker_it = temp_tiles.find('?');
+            if (joker_it != temp_tiles.end()) {
+                temp_tiles.erase(joker_it);
+            } else {
+                // Neither the letter nor a joker is available
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 }  // namespace scradle

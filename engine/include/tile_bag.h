@@ -1,15 +1,17 @@
 #ifndef SCRADLE_TILE_BAG_H
 #define SCRADLE_TILE_BAG_H
 
-#include <string>
 #include <random>
+#include <set>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace scradle {
 
 // Manages the bag of tiles for a Scrabble game
 class TileBag {
-public:
+   public:
     // French Scrabble has 100 tiles total
     static constexpr int TOTAL_TILES = 100;
 
@@ -21,6 +23,7 @@ public:
 
     // Draw a single tile
     char drawTile();
+    char drawTile(char letter);
 
     // Return tiles to the bag (for testing or undo)
     void returnTiles(const std::string& tiles);
@@ -54,18 +57,19 @@ public:
     static bool isVowel(char letter);
     static bool isConsonant(char letter);
 
-private:
-    std::vector<char> tiles_;
+    // Game state potential utilities
+    bool contains(char letter) const;
+    bool canDrawTiles(const std::string& letters);
+
+   private:
+    std::multiset<char> tiles_;
     std::mt19937 rng_;
     unsigned int seed_;
 
     // Initialize the bag with French Scrabble distribution
     void initializeTiles();
-
-    // Shuffle the tiles
-    void shuffle();
 };
 
-} // namespace scradle
+}  // namespace scradle
 
-#endif // SCRADLE_TILE_BAG_H
+#endif  // SCRADLE_TILE_BAG_H

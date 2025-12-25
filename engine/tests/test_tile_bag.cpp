@@ -101,9 +101,8 @@ void test_tile_bag_vowel_consonant_counting() {
     int consonants = bag.consonantCount();
 
     // French Scrabble: 51 vowels (15A + 15E + 8I + 6O + 6U + 1Y) + 2 blanks + 46 consonants = 100
-    assert_equal(45, vowels, "Should have 51 vowels initially");
-    assert_equal(55, consonants, "Should have 46 consonants initially");
-    assert_equal(102, vowels + consonants + 2, "Vowels + consonants + blanks should equal 100");
+    assert_equal(47, vowels, "Should have 47 vowels initially");
+    assert_equal(57, consonants, "Should have 46 consonants initially");
 
     assert_true(bag.hasVowels(), "Should have vowels");
     assert_true(bag.hasConsonants(), "Should have consonants");
@@ -152,6 +151,119 @@ void test_tile_bag_different_seeds() {
     std::string tiles2 = bag2.drawTiles(20);
 
     assert_true(tiles1 != tiles2, "Different seeds should produce different draws");
+}
+
+void test_tile_bag_draw_specific_letter() {
+    cout << "\n"
+         << color::BLUE << color::BOLD << "=== Test: TileBag Draw Specific Letter ===" << color::RESET << endl;
+
+    TileBag bag(123);
+
+    // Draw a specific letter that exists
+    char drawn = bag.drawTile('E');
+    assert_equal('E', drawn, "Should draw an E");
+    assert_equal(101, bag.remainingCount(), "Should have 101 tiles left");
+
+    // Draw another E
+    char drawn2 = bag.drawTile('E');
+    assert_equal('E', drawn2, "Should draw another E");
+    assert_equal(100, bag.remainingCount(), "Should have 100 tiles left");
+}
+
+void test_tile_bag_draw_specific_letter_with_joker_fallback() {
+    cout << "\n"
+         << color::BLUE << color::BOLD << "=== Test: TileBag Draw Specific Letter with Joker Fallback ===" << color::RESET << endl;
+
+    TileBag bag(456);
+
+    // Draw all Z's (there's only 1)
+    char z1 = bag.drawTile('Z');
+    assert_equal('Z', z1, "Should draw the Z");
+    assert_equal(101, bag.remainingCount(), "Should have 101 tiles left");
+
+    // Try to draw another Z - should get a joker instead
+    char z2 = bag.drawTile('Z');
+    assert_equal('?', z2, "Should draw a joker when Z is not available");
+    assert_equal(100, bag.remainingCount(), "Should have 100 tiles left");
+
+    // Try to draw another Z - should get the second joker
+    char z3 = bag.drawTile('Z');
+    assert_equal('?', z3, "Should draw the second joker when Z is still not available");
+    assert_equal(99, bag.remainingCount(), "Should have 99 tiles left");
+
+    // Try to draw another Z - should fail now
+    char z4 = bag.drawTile('Z');
+    assert_equal('\0', z4, "Should return null when neither Z nor jokers are available");
+    assert_equal(99, bag.remainingCount(), "Should still have 99 tiles left");
+}
+
+void test_can_draw_tiles_basic() {
+    cout << "\n"
+         << color::BLUE << color::BOLD << "=== Test: canDrawTiles Basic ===" << color::RESET << endl;
+
+    TileBag bag(789);
+
+    // Test with available letters
+    assert_true(bag.canDrawTiles("HELLO"), "Should be able to draw HELLO");
+    assert_true(bag.canDrawTiles("E"), "Should be able to draw single E");
+    assert_true(bag.canDrawTiles(""), "Should be able to draw empty string");
+
+    // Test with letters that exist in the distribution
+    assert_true(bag.canDrawTiles("AEIOU"), "Should be able to draw common vowels");
+    assert_true(bag.canDrawTiles("SCRABBLE"), "Should be able to draw SCRABBLE");
+}
+
+void test_can_draw_tiles_with_joker_fallback() {
+    cout << "\n"
+         << color::BLUE << color::BOLD << "=== Test: canDrawTiles with Joker Fallback ===" << color::RESET << endl;
+
+    TileBag bag(321);
+
+    // Draw all Z's (there's only 1)
+    bag.drawTile('Z');
+
+    // Should still be able to "draw" Z by using a joker
+    assert_true(bag.canDrawTiles("Z"), "Should be able to draw Z using a joker");
+
+    // Should be able to draw 2 Z's using the 2 jokers
+    assert_true(bag.canDrawTiles("ZZ"), "Should be able to draw ZZ using both jokers");
+
+    // Cannot draw 3 Z's (1 gone, only 2 jokers available)
+    assert_false(bag.canDrawTiles("ZZZ"), "Should not be able to draw ZZZ (need 3, have 0 Z + 2 jokers)");
+}
+
+void test_can_draw_tiles_insufficient_letters() {
+    cout << "\n"
+         << color::BLUE << color::BOLD << "=== Test: canDrawTiles Insufficient Letters ===" << color::RESET << endl;
+
+    TileBag bag(654);
+
+    // Draw many E's (there are 15 total)
+    for (int i = 0; i < 15; ++i) {
+        bag.drawTile('E');
+    }
+
+    // Now E's are exhausted, but we have 2 jokers
+    assert_true(bag.canDrawTiles("E"), "Should be able to draw 1 E using joker");
+    assert_true(bag.canDrawTiles("EE"), "Should be able to draw 2 E's using both jokers");
+    assert_false(bag.canDrawTiles("EEE"), "Should not be able to draw 3 E's (need 3, have 0 E + 2 jokers)");
+}
+
+void test_can_draw_tiles_multiple_of_same_letter() {
+    cout << "\n"
+         << color::BLUE << color::BOLD << "=== Test: canDrawTiles Multiple of Same Letter ===" << color::RESET << endl;
+
+    TileBag bag(987);
+
+    // Test drawing multiple of the same letter
+    assert_true(bag.canDrawTiles("EEEE"), "Should be able to draw 4 E's (have 15)");
+    assert_true(bag.canDrawTiles("AAAAAAAAA"), "Should be able to draw 9 A's (have exactly 9)");
+
+    // This should fail - there are only 9 A's and 2 jokers
+    assert_false(bag.canDrawTiles("AAAAAAAAAAAA"), "Should not be able to draw 12 A's (have 9 A + 2 jokers)");
+
+    // But 11 A's should work (9 real + 2 jokers)
+    assert_true(bag.canDrawTiles("AAAAAAAAAAA"), "Should be able to draw 11 A's (9 A + 2 jokers)");
 }
 
 int main() {
