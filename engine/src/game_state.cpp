@@ -5,7 +5,7 @@
 namespace scradle {
 
 GameState::GameState(unsigned int seed)
-    : tile_bag_(seed), seed_(seed), total_score_(0), bingo_count_(0) {}
+    : board_(), rack_(), tile_bag_(seed), seed_(seed), total_score_(0), bingo_count_(0), move_history_() {}
 
 void GameState::applyMove(const Move& move) {
     // Place tiles on board

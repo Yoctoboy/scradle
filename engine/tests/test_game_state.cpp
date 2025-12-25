@@ -110,11 +110,6 @@ void test_game_state_is_game_over() {
     // Let's check the actual state
     state.refillRack();  // This won't draw anything since bag is empty
 
-    // Game over depends on whether we have vowels AND consonants
-    // For this test, we'll verify the logic works
-    bool has_vowels = state.getTileBag().vowelCount() > 0 || state.getRack().size() > 0;
-    bool has_consonants = state.getTileBag().consonantCount() > 0 || state.getRack().size() > 0;
-
     // If we have neither vowels nor consonants (or missing one), game should be over
     // This is implementation-dependent, so we just verify the method runs
     assert_true(state.isGameOver(), "Game should be over");

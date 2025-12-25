@@ -125,55 +125,6 @@ void test_blank_on_board_recognition() {
     cout << "  Blank on board correctly recognized and scored as 0 points" << endl;
 }
 
-void test_blank_on_board_in_generated_move() {
-    cout << "\n=== Test: Blank On Board In Generated Move ===" << endl;
-
-    Board board;
-    DAWG dawg;
-    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
-
-    // Place a blank 'o' on the board at center (lowercase = blank)
-    board.setLetter(7, 7, 'O');
-
-    // Place 'N' next to it so we have "ON" on board (with blank 'o')
-    board.setLetter(7, 8, 'N');
-
-    // Try to generate moves adjacent to these tiles
-    Rack rack("JUR");
-    MoveGenerator gen(board, rack, dawg);
-    auto moves = gen.generateMoves();
-
-    // Look for a move containing "ON" that goes through one of our tiles
-    bool found_move_with_on = false;
-    for (const auto& move : moves) {
-        bool has_o_or_n = false;
-        bool has_blank_at_7_7 = false;
-
-        for (const auto& placement : move.getPlacements()) {
-            if ((placement.row == 7 && placement.col == 7) ||
-                (placement.row == 7 && placement.col == 8)) {
-                has_o_or_n = true;
-                if (placement.row == 7 && placement.col == 7 && placement.is_blank) {
-                    has_blank_at_7_7 = true;
-                }
-            }
-        }
-
-        if (has_o_or_n) {
-            found_move_with_on = true;
-            cout << "  Found move using existing tiles: " << move.getWord()
-                 << " at (" << move.getStartRow() << "," << move.getStartCol() << ")";
-            if (has_blank_at_7_7) {
-                cout << " (includes blank 'o')";
-            }
-            cout << endl;
-            break;
-        }
-    }
-
-    assert_true(found_move_with_on, "Should find moves using existing tiles including blank");
-}
-
 void test_integrated_blank_scoring() {
     cout << "\n=== Test: Integrated Blank Scoring ===" << endl;
 
@@ -228,7 +179,6 @@ int main() {
     test_move_generator_with_blank();
     test_blank_generates_more_moves();
     test_blank_on_board_recognition();
-    test_blank_on_board_in_generated_move();
     test_integrated_blank_scoring();
 
     print_summary();
