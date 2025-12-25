@@ -276,6 +276,12 @@ int main() {
     test_tile_bag_draw_partial();
     test_tile_bag_reset();
     test_tile_bag_different_seeds();
+    test_tile_bag_draw_specific_letter();
+    test_tile_bag_draw_specific_letter_with_joker_fallback();
+    test_can_draw_tiles_basic();
+    test_can_draw_tiles_with_joker_fallback();
+    test_can_draw_tiles_insufficient_letters();
+    test_can_draw_tiles_multiple_of_same_letter();
 
     print_summary();
     return exit_code();
