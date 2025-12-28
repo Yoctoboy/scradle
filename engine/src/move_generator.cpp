@@ -6,6 +6,7 @@
 #include <set>
 
 #include "scorer.h"
+#include "move.h"
 
 using std::min;
 using std::string;
@@ -21,7 +22,7 @@ vector<Move> MoveGenerator::generateMoves() {
     vector<StartPosition> positions = findStartPositions();
 
     // Step 2: Generate all raw moves
-    vector<RawMove> raw_moves = generateAllRawMoves(positions);
+    vector<RawMove> raw_moves = generateRawMoves(positions);
 
     // Step 3: Filter and validate moves
     vector<Move> valid_moves = filterValidMoves(raw_moves);
@@ -182,7 +183,7 @@ vector<StartPosition> MoveGenerator::findStartPositions() const {
     return positions;
 }
 
-vector<RawMove> MoveGenerator::generateAllRawMoves(const vector<StartPosition>& positions) const {
+vector<RawMove> MoveGenerator::generateRawMoves(const vector<StartPosition>& positions) const {
     vector<RawMove> raw_moves;
 
     // Get rack tiles as a string
@@ -191,104 +192,127 @@ vector<RawMove> MoveGenerator::generateAllRawMoves(const vector<StartPosition>& 
         return raw_moves;  // No moves possible with empty rack
     }
 
-    // Generate all permutations of all possible lengths (1 to rack size)
-    vector<string> all_permutations;
-    generatePermutations(rack_tiles, 1, rack_tiles.size(), all_permutations);
-
-    // Expand blank tiles in permutations
-    vector<string> expanded_permutations;
-    for (const auto& perm : all_permutations) {
-        expandBlanks(perm, 0, "", expanded_permutations);
+    // Build letter count array (26 letters + blanks)
+    int letter_count[27] = {0};  // A-Z = 0-25, blank = 26
+    for (char c : rack_tiles) {
+        if (c == '?') {
+            letter_count[26]++;
+        } else {
+            letter_count[c - 'A']++;
+        }
     }
 
-    // For each start position, use only permutations with appropriate lengths
+    // For each start position, generate moves using DFS
     for (const auto& pos : positions) {
-        string position_prefix = board_.getExistingPrefix(pos);
-        for (const auto& perm : expanded_permutations) {
-            int perm_len = perm.size();
-            // Only use permutations within the min/max extension range
-            if (perm_len >= pos.min_extension && perm_len <= pos.max_extension) {
-                RawMove raw_move = createRawMove(perm, pos);
-                // Only add moves that actually placed tiles
-                if (!raw_move.placements.empty()) {
-                    raw_moves.push_back(raw_move);
-                }
-            }
+        // Get any existing prefix (tiles before the start position)
+        string existing_prefix = board_.getExistingPrefix(pos);
+
+        // Find the DAWG node corresponding to this prefix
+        auto start_node = existing_prefix.empty() ? dawg_.getRoot() : dawg_.getNodeAt(existing_prefix);
+
+        // If prefix is not in DAWG, no valid moves can be formed
+        if (start_node == nullptr) {
+            continue;
         }
+
+        // Create a buffer to hold tiles we're placing from rack
+        string tiles_from_rack;
+        tiles_from_rack.reserve(7);
+        // Start DFS from the appropriate DAWG node, position offset 0
+        dfsGenerateMoves(letter_count, start_node, tiles_from_rack, 0, pos, &raw_moves);
     }
 
     return raw_moves;
 }
 
-void MoveGenerator::generatePermutations(
-    const string& tiles,
-    int min_length,
-    int max_length,
-    vector<string>& result) const {
-    // Use a set to automatically deduplicate permutations (handles duplicate tiles)
-    std::set<string> unique_permutations;
+void MoveGenerator::dfsGenerateMoves(
+    int letter_count[27],
+    std::shared_ptr<DAWG::Node> node,
+    string& tiles_from_rack,
+    int position_offset,
+    const StartPosition& pos,
+    vector<RawMove>* raw_moves) const {
 
-    // Generate all permutations of subsets from min_length to max_length
-    for (int len = min_length; len <= max_length && len <= (int)tiles.size(); len++) {
-        // Generate all subsets of size len, then permute each subset
-        string current;
-        vector<bool> used(tiles.size(), false);
-        vector<string> temp_result;
-        generatePermutationsHelper(tiles, used, len, current, temp_result);
+    // Calculate current position on the board
+    int current_row = pos.row;
+    int current_col = pos.col;
 
-        // Insert into set to remove duplicates
-        for (const auto& perm : temp_result) {
-            unique_permutations.insert(perm);
-        }
+    // Advance position by position_offset
+    for (int i = 0; i < position_offset; i++) {
+        getNext(current_row, current_col, pos.direction);
     }
 
-    // Convert set back to vector
-    result.clear();
-    result.assign(unique_permutations.begin(), unique_permutations.end());
-}
-
-void MoveGenerator::generatePermutationsHelper(
-    const string& tiles,
-    vector<bool>& used,
-    int remaining,
-    string& current,
-    vector<string>& result) const {
-    if (remaining == 0) {
-        result.push_back(current);
+    // Check if we've gone off the board
+    if (current_row > 15 || current_col > 15) {
         return;
     }
 
-    for (size_t i = 0; i < tiles.size(); i++) {
-        if (!used[i]) {
-            used[i] = true;
-            current.push_back(tiles[i]);
-            generatePermutationsHelper(tiles, used, remaining - 1, current, result);
-            current.pop_back();
-            used[i] = false;
-        }
-    }
-}
-
-void MoveGenerator::expandBlanks(
-    const string& permutation,
-    size_t index,
-    string current,
-    vector<string>& result) const {
-    // Base case: reached the end of the permutation
-    if (index == permutation.size()) {
-        result.push_back(current);
-        return;
-    }
-
-    char c = permutation[index];
-    if (c == '?') {
-        // Blank tile - try all 26 letters (lowercase to mark as blank)
-        for (char letter = 'a'; letter <= 'z'; letter++) {
-            expandBlanks(permutation, index + 1, current + letter, result);
+    // Count how many tiles we've placed from rack
+    int tiles_placed = tiles_from_rack.size();
+    // If we have placed enough tiles and this is a valid word, save it
+    if (node->is_end_of_word && tiles_placed >= pos.min_extension && tiles_placed <= pos.max_extension) {
+        RawMove raw_move = createRawMove(tiles_from_rack, pos);
+        if (!raw_move.placements.empty()) {
+            raw_moves->push_back(raw_move);
         }
     } else {
-        // Regular tile - keep it as is (uppercase)
-        expandBlanks(permutation, index + 1, current + c, result);
+    }
+
+    // Don't extend beyond max_extension tiles from rack
+    if (tiles_placed > pos.max_extension) {
+        return;
+    }
+
+    // Check if there's an existing tile at current position
+    if (!board_.isEmpty(current_row, current_col)) {
+        // There's a tile on the board - we must use it
+        char existing_letter = toupper(board_.getLetter(current_row, current_col));
+        auto it = node->children.find(existing_letter);
+        if (it != node->children.end()) {
+            // Continue to next position without placing a tile from rack
+            dfsGenerateMoves(letter_count, it->second, tiles_from_rack, position_offset + 1, pos, raw_moves);
+        }
+        return;
+    }
+
+    // Empty square - try extending with each available letter from the rack
+    for (int c = 0; c < 26; ++c) {
+        // First, try using a regular tile
+        if (letter_count[c] > 0) {
+            // Check if this letter extends to a valid prefix in the DAWG
+            char letter = 'A' + c;
+            auto it = node->children.find(letter);
+            if (it != node->children.end()) {
+                // Choose this letter (uppercase = regular tile)
+                letter_count[c]--;
+                tiles_from_rack.push_back(letter);
+
+                // Recurse
+                dfsGenerateMoves(letter_count, it->second, tiles_from_rack, position_offset + 1, pos, raw_moves);
+
+                // Undo choice
+                tiles_from_rack.pop_back();
+                letter_count[c]++;
+            }
+        }
+
+        // Also try using a blank tile for this letter (if we have any)
+        if (letter_count[26] > 0) {
+            char letter = 'A' + c;
+            auto it = node->children.find(letter);
+            if (it != node->children.end()) {
+                // Choose this letter using a blank (lowercase = blank tile)
+                letter_count[26]--;
+                tiles_from_rack.push_back('a' + c);  // lowercase to mark as blank
+
+                // Recurse
+                dfsGenerateMoves(letter_count, it->second, tiles_from_rack, position_offset + 1, pos, raw_moves);
+
+                // Undo choice
+                tiles_from_rack.pop_back();
+                letter_count[26]++;
+            }
+        }
     }
 }
 

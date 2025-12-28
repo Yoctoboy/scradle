@@ -297,11 +297,12 @@ void test_raw_moves_basic() {
     Board board;
     Rack rack("CAT");
     DAWG dawg;
+    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
 
     MoveGenerator generator(board, rack, dawg);
 
     auto positions = generator.findStartPositions();
-    auto raw_moves = generator.generateAllRawMoves(positions);
+    auto raw_moves = generator.generateRawMoves(positions);
 
     // Should generate raw moves on empty board
     assert_true(raw_moves.size() > 0, "Should generate raw moves");
@@ -324,7 +325,7 @@ void test_raw_moves_rack_constraint() {
     MoveGenerator generator(board, rack, dawg);
 
     auto positions = generator.findStartPositions();
-    auto raw_moves = generator.generateAllRawMoves(positions);
+    auto raw_moves = generator.generateRawMoves(positions);
 
     // Check that all raw moves only use letters from the rack
     for (const auto& raw_move : raw_moves) {
@@ -355,66 +356,6 @@ void test_raw_moves_rack_constraint() {
     assert_true(true, "All raw moves use only rack letters");
 }
 
-void test_raw_moves_blank_expansion() {
-    cout << "\n=== Test: Raw Moves - Blank Expansion ===" << endl;
-
-    Board board;
-    Rack rack("A?BCDE");
-    DAWG dawg;
-
-    // Place a tile at center
-    board.setLetter(7, 7, 'A');
-
-    MoveGenerator generator(board, rack, dawg);
-
-    auto positions = generator.findStartPositions();
-    auto raw_moves = generator.generateAllRawMoves(positions);
-
-    // Should generate many raw moves (blank expands to 26 letters)
-    assert_true(raw_moves.size() > 0, "Should generate raw moves with blanks");
-
-    // Check that some moves have blanks marked
-    int found_AABzE = 0;
-    int found_AABzD = 0;
-    bool found_blank_move = false;
-    for (const auto& raw_move : raw_moves) {
-        int found_blank_in_move = 0;
-        for (const auto& placement : raw_move.placements) {
-            if (placement.is_blank) {
-                found_blank_in_move++;
-                found_blank_move = true;
-            }
-        }
-        assert_true(found_blank_in_move <= 1, "Move has one blank or less", 0);
-        if (raw_move.direction == Direction::HORIZONTAL) {
-            if (raw_move.start_row == 7 && raw_move.start_col == 6) {
-                if ((int)raw_move.placements.size() == 4) {
-                    TilePlacement p0 = raw_move.placements.at(0);
-                    if (p0.row == 7 && p0.col == 6 && p0.letter == 'A' && p0.is_blank == false && p0.is_from_rack) {
-                        TilePlacement p1 = raw_move.placements.at(1);
-                        if (p1.row == 7 && p1.col == 8 && p1.letter == 'B' && p1.is_blank == false && p1.is_from_rack) {
-                            TilePlacement p2 = raw_move.placements.at(2);
-                            if (p2.row == 7 && p2.col == 9 && p2.letter == 'Z' && p2.is_blank && p2.is_from_rack) {
-                                TilePlacement p3 = raw_move.placements.at(3);
-                                if (p3.row == 7 && p3.col == 10 && p3.letter == 'E' && p3.is_blank == false && p3.is_from_rack) {
-                                    found_AABzE++;
-                                }
-                                if (p3.row == 7 && p3.col == 10 && p3.letter == 'D' && p3.is_blank == false && p3.is_from_rack) {
-                                    found_AABzD++;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    cout << "  Generated " << raw_moves.size() << " raw moves with blank expansion" << endl;
-    assert_equal(1, found_AABzE, "Should find AABzE move once");
-    assert_equal(1, found_AABzD, "Should find AABzD move once");
-    assert_true(found_blank_move, "Should find at least one move with blank tile");
-}
-
 void test_raw_moves_adjacency() {
     cout << "\n=== Test: Raw Moves - Adjacency to Existing Tiles ===" << endl;
 
@@ -428,7 +369,7 @@ void test_raw_moves_adjacency() {
     MoveGenerator generator(board, rack, dawg);
 
     auto positions = generator.findStartPositions();
-    auto raw_moves = generator.generateAllRawMoves(positions);
+    auto raw_moves = generator.generateRawMoves(positions);
 
     // All raw moves should be adjacent to the existing tile
     for (const auto& raw_move : raw_moves) {
@@ -463,7 +404,7 @@ void test_get_main_word() {
     {
         MoveGenerator generator(board, rack, dawg);
         auto positions = generator.findStartPositions();
-        auto raw_moves = generator.generateAllRawMoves(positions);
+        auto raw_moves = generator.generateRawMoves(positions);
 
         // Find a move that places "CAT"
         for (const auto& raw_move : raw_moves) {
@@ -491,7 +432,7 @@ void test_get_main_word() {
         MoveGenerator generator2(board, rack2, dawg);
 
         auto positions = generator2.findStartPositions();
-        auto raw_moves = generator2.generateAllRawMoves(positions);
+        auto raw_moves = generator2.generateRawMoves(positions);
 
         // Find a move that extends "CA" to "CAT"
         for (const auto& raw_move : raw_moves) {
@@ -538,7 +479,7 @@ void test_get_cross_words() {
 
     MoveGenerator generator(board, rack, dawg);
     auto positions = generator.findStartPositions();
-    auto raw_moves = generator.generateAllRawMoves(positions);
+    auto raw_moves = generator.generateRawMoves(positions);
 
     // Find a move that places "R" at (6,8) and "A" at (7,8) vertically with other tiles
     bool found_test_CAT = false;
@@ -618,7 +559,7 @@ void test_get_cross_words_with_blank() {
 
     MoveGenerator generator(board, rack, dawg);
     auto positions = generator.findStartPositions();
-    auto raw_moves = generator.generateAllRawMoves(positions);
+    auto raw_moves = generator.generateRawMoves(positions);
 
     // Find a move that places "R" at (6,8) and "A" at (7,8) vertically with other tiles
     bool found_test_CAT = false;
@@ -682,7 +623,7 @@ void test_is_valid_move_main_word() {
 
     MoveGenerator generator(board, rack, dawg);
     auto positions = generator.findStartPositions();
-    auto raw_moves = generator.generateAllRawMoves(positions);
+    auto raw_moves = generator.generateRawMoves(positions);
 
     int valid_count = 0;
     int invalid_count = 0;
@@ -701,7 +642,7 @@ void test_is_valid_move_main_word() {
     }
 
     assert_true(valid_count > 0, "Should find at least one valid move (CAT)");
-    assert_true(invalid_count > 0, "Should find invalid moves (non-CAT words)");
+    assert_true(invalid_count == 0, "Should not find invalid moves (non-CAT words)");
     cout << "  Found " << valid_count << " valid moves, " << invalid_count << " invalid moves" << endl;
 }
 
@@ -724,7 +665,7 @@ void test_is_valid_move_cross_words() {
 
     MoveGenerator generator(board, rack, dawg);
     auto positions = generator.findStartPositions();
-    auto raw_moves = generator.generateAllRawMoves(positions);
+    auto raw_moves = generator.generateRawMoves(positions);
 
     // Look for the RAT move (should be invalid because ARM cross-word is not in DAWG)
     bool found_rat_move = false;
@@ -773,7 +714,7 @@ void test_is_valid_move_all_valid() {
 
     MoveGenerator generator(board, rack, dawg);
     auto positions = generator.findStartPositions();
-    auto raw_moves = generator.generateAllRawMoves(positions);
+    auto raw_moves = generator.generateRawMoves(positions);
 
     // Look for the RAT move (should be valid now)
     bool found_valid_rat = false;
@@ -831,31 +772,27 @@ void test_word_validation() {
 }
 
 int main() {
-    cout << "=== Scradle Engine - Phase 3 Tests ===" << endl;
-    cout << "Testing Move Generator with Cross-Checks" << endl;
+    cout << "=== Scradle Engine - Move Generator Tests ===" << endl;
 
-    // Step 1 tests
+    // basic structure tests
     test_start_positions();
     test_start_positions_empty_board();
-
-    // Basic structure tests
     test_move_structure();
     test_tile_placement();
 
-    // Step 2 tests (raw move generation)
+    // raw move generation
     test_raw_moves_basic();
     test_raw_moves_rack_constraint();
-    test_raw_moves_blank_expansion();
     test_raw_moves_adjacency();
 
-    // Step 3 tests (validation helpers)
+    // validation helpers
     test_get_main_word();
     test_get_cross_words();
     test_is_valid_move_main_word();
     test_is_valid_move_cross_words();
     test_is_valid_move_all_valid();
 
-    // Integration tests (Steps 1-3)
+    // integration tests
     test_anchor_identification_with_tiles();
     test_cross_check_computation();
     test_simple_move_generation();
@@ -863,6 +800,8 @@ int main() {
     test_empty_rack();
     test_large_dictionary();
     test_move_with_existing_tiles();
+
+    test_raw_moves_basic();
 
     print_summary();
 

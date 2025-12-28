@@ -187,12 +187,14 @@ void test_board_scenario_3() {
     MoveGenerator gen(board, rack, dawg);
     auto top_moves = gen.getBestMove();
 
-    assert_equal(1, (int)top_moves.size(), "Only one best move found");
-    assert_equal(std::string("DORAIENT at 12H [74 pts]"), top_moves[0].toString(), "Top move is DORAIENT at 12H [74 pts]");
+    if(!assert_equal(1, (int)top_moves.size(), "Only one best move found")){
+        return;
+    }
+    assert_equal(std::string("DORAIENT at 12H [74 pts] [BINGO]"), top_moves[0].toString(), "Top move is DORAIENT at 12H [74 pts]");
 }
 
 void test_board_scenario_4() {
-    cout << "\n=== Test: Example Complex Board 3 ===" << endl;
+    cout << "\n=== Test: Example Complex Board 4 ===" << endl;
 
     // Example board - replace with your own test cases
     Board board = Board::parseBoard(R"(
@@ -220,7 +222,9 @@ void test_board_scenario_4() {
     MoveGenerator gen(board, rack, dawg);
     auto top_moves = gen.getBestMove();
 
-    assert_equal(2, (int)top_moves.size(), "Two best moves found");
+    if(!assert_equal(2, (int)top_moves.size(), "Two best moves found")){
+        return;
+    }
     assert_equal(std::string("THUGS at G11 [29 pts]"), top_moves[0].toString(), "Top move is THUGS at G11 [29 pts]");
     assert_equal(std::string("CHUS at I5 [29 pts]"), top_moves[1].toString(), "Second top move is CHUS at I5 [29 pts]");
 }
@@ -246,9 +250,6 @@ void test_board_scenario_5() {
         ...............
         ...............
     )");
-
-    cout << "Board with blank 'r' at (7,5):" << endl;
-    board.display();
 
     DAWG dawg;
     dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
@@ -306,18 +307,52 @@ void test_board_scenario_6() {
     assert_equal(std::string("JURON at H5 [12 pts]"), top_moves[0].toString(), "Top move is JURON at H5 [12 pts]");
 }
 
+void test_board_scenario_7() {
+    cout << "\n=== Test: Example Complex Board 7 ===" << endl;
+
+    // Example board - replace with your own test cases
+    Board board = Board::parseBoard(R"(
+        ......CABILLAU.
+        ...........E.NE
+        ...........G..S
+        .......VERMOUT.
+        .............AY
+        .........TURNE.
+        .............NO
+        ...KLAXONNERAI.
+        ...I...T.....AH
+        WURTEMbERGEOIS.
+        .....A.E......Q
+        .....N..S...D.U
+        .....SOLO.L.API
+        ......RAFFErMI.
+        DESUBJECTIVISE.
+    )");
+
+    DAWG dawg;
+    dawg.loadFromFile("engine/dictionnaries/ods8_complete.txt");
+
+    Rack rack("DEEHPTZ");
+    MoveGenerator gen(board, rack, dawg);
+
+    auto top_moves = gen.getBestMove();
+
+    assert_equal(std::string("DESHYPOTHEQUIEZ at 15A [1797 pts] [BINGO]"), top_moves[0].toString(), "Top move is DESHYPOTHEQUIEZ at 15A [1797 pts]");
+}
+
 int main() {
     cout << "=== Scradle Engine - Complex Board Tests ===" << endl;
 
     // test_board_parser();
     // test_example_board();
-    // test_board_scenario_1();
-    // TIME_TEST("scenario 2", test_board_scenario_2);
-    test_board_scenario_2();
+    TIME_TEST("scenario 1", test_board_scenario_1);
+    TIME_TEST("scenario 2", test_board_scenario_2);
+    // test_board_scenario_2();
     // test_board_scenario_3();
     // test_board_scenario_4();
     // test_board_scenario_5();
     // test_board_scenario_6();
+    // test_board_scenario_7();
 
     print_summary();
 

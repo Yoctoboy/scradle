@@ -18,6 +18,24 @@ struct RawMove {
     Direction direction;
     int start_row;
     int start_col;
+
+    std::string toString() const {
+        std::string result = "RawMove(";
+        result += (direction == Direction::HORIZONTAL ? "H" : "V");
+        result += " [" + std::to_string(start_row) + "," + std::to_string(start_col) + "] ";
+
+        for (size_t i = 0; i < placements.size(); ++i) {
+            const auto& p = placements[i];
+            if (p.is_from_rack) {
+                result += p.letter;
+            } else {
+                result += '(' + std::string(1, p.letter) + ')';
+            }
+        }
+
+        result += ")";
+        return result;
+    }
 };
 
 // Generates all valid moves for a given board state and rack
@@ -32,7 +50,7 @@ class MoveGenerator {
     std::vector<StartPosition> findStartPositions() const;
 
     // Step 2: Generate all possible raw moves (exposed for testing)
-    std::vector<RawMove> generateAllRawMoves(const std::vector<StartPosition>& positions) const;
+    std::vector<RawMove> generateRawMoves(const std::vector<StartPosition>& positions) const;
 
     // Step 3 helpers (exposed for testing)
     std::string getMainWord(const RawMove& raw_move) const;
@@ -50,27 +68,14 @@ class MoveGenerator {
     const Rack& rack_;
     const DAWG& dawg_;
 
-    // Helper: Generate permutations of rack tiles
-    void generatePermutations(
-        const std::string& tiles,
-        int min_length,
-        int max_length,
-        std::vector<std::string>& result) const;
-
-    // Helper: Recursive helper for generatePermutations
-    void generatePermutationsHelper(
-        const std::string& tiles,
-        std::vector<bool>& used,
-        int remaining,
-        std::string& current,
-        std::vector<std::string>& result) const;
-
-    // Helper: Expand blank tiles ('?') to all possible letters
-    void expandBlanks(
-        const std::string& permutation,
-        size_t index,
-        std::string current,
-        std::vector<std::string>& result) const;
+    // DFS-based move generation using DAWG traversal
+    void dfsGenerateMoves(
+        int letter_count[27],
+        std::shared_ptr<DAWG::Node> node,
+        std::string& tiles_from_rack,
+        int position_offset,
+        const StartPosition& pos,
+        std::vector<RawMove>* raw_moves) const;
 
     // Helper: Generate raw move for a specific tile sequence and start position
     RawMove createRawMove(
