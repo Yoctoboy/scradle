@@ -85,19 +85,18 @@ int main(int argc, char* argv[]) {
     // Generate seeds upfront to ensure reproducibility
     vector<unsigned int> seeds(num_games);
     for (int i = 0; i < num_games; i++) {
-        seeds[i] = randomBetween1AndMax(1000000);
+        seeds[i] = randomBetween1AndMax(1000000000);
     }
 
     auto total_start = chrono::high_resolution_clock::now();
+
+    // Progress tracking
+    int completed_games = 0;
 
 // Parallel game simulation
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < num_games; i++) {
         unsigned int seed = seeds[i];
-#pragma omp critical
-        {
-            cout << "Starting Game " << (i + 1) << "/" << num_games << " with seed " << seed << endl;
-        }
 
         auto game_start = chrono::high_resolution_clock::now();
 
@@ -116,16 +115,25 @@ int main(int argc, char* argv[]) {
 
         all_stats[i] = stats;
 
+        // Update progress (thread-safe)
+#pragma omp atomic
+        completed_games++;
+
+// Only one thread prints progress to avoid garbled output
 #pragma omp critical
         {
-            cout << "Game " << (i + 1) << "/" << num_games
-                 << " (seed " << seed << "): "
-                 << stats.total_score << " pts, "
-                 << stats.move_count << " moves, "
-                 << stats.bingo_count << " bingos, "
-                 << stats.duration_ms << " ms" << endl;
+            float progress = (float)completed_games / num_games * 100.0f;
+            auto elapsed = chrono::duration_cast<chrono::seconds>(
+                               chrono::high_resolution_clock::now() - total_start)
+                               .count();
+            cout << "\rProgress: " << completed_games << "/" << num_games
+                 << " (" << fixed << setprecision(2) << progress << "%) "
+                 << "- Elapsed: " << elapsed << "s" << flush;
         }
     }
+
+    // Clear the progress line and move to next line
+    cout << "\r" << string(80, ' ') << "\r" << flush;
 
     auto total_end = chrono::high_resolution_clock::now();
     auto total_duration = chrono::duration_cast<chrono::milliseconds>(total_end - total_start).count();
@@ -214,6 +222,21 @@ int main(int argc, char* argv[]) {
 
     for (int i = 0; i < min(5, (int)sorted_by_score.size()); i++) {
         const auto& stats = sorted_by_score[i];
+        cout << "  " << (i + 1) << ". Seed " << stats.seed << ": "
+             << stats.total_score << " pts ("
+             << stats.move_count << " moves, "
+             << stats.bingo_count << " bingos)" << endl;
+    }
+
+    // Bottom 5 games by score
+    vector<GameStats> sorted_by_score_reverse = all_stats;
+    sort(sorted_by_score_reverse.begin(), sorted_by_score_reverse.end(),
+         [](const GameStats& a, const GameStats& b) { return a.total_score < b.total_score; });
+    int zero_pt_game_index = 0;
+    while(sorted_by_score_reverse[zero_pt_game_index].total_score == 0) zero_pt_game_index++;
+    cout << endl << "Bottom 5 Games by Score (0 point games: " << zero_pt_game_index << "):" << endl;
+    for (int i = zero_pt_game_index; i < min(5 + zero_pt_game_index, (int)sorted_by_score_reverse.size()); i++) {
+        const auto& stats = sorted_by_score_reverse[i];
         cout << "  " << (i + 1) << ". Seed " << stats.seed << ": "
              << stats.total_score << " pts ("
              << stats.move_count << " moves, "
