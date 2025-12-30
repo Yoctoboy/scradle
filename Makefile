@@ -28,8 +28,9 @@ TEST_GAME_STATE_TARGET = $(BIN_DIR)/test_game_state
 TEST_DUPLICATE_GAME_TARGET = $(BIN_DIR)/test_duplicate_game
 SIMULATE_GAMES_TARGET = $(BIN_DIR)/simulate_games
 SINGLE_GAME_TARGET = $(BIN_DIR)/single_game
+EXPENSIVE_GAME_FINDER_TARGET = $(BIN_DIR)/expensive_game_finder
 
-.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-tile-bag test-game-state test-duplicate-game test-all simulate single-game dirs
+.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-tile-bag test-game-state test-duplicate-game test-all simulate single-game expensive-game dirs
 
 all: dirs $(OBJECTS)
 
@@ -107,11 +108,17 @@ $(SIMULATE_GAMES_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/sim
 $(SINGLE_GAME_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/single_game.cpp
 	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/single_game.cpp -o $@
 
+$(EXPENSIVE_GAME_FINDER_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/expensive_game_finder/main.cpp scripts/expensive_game_finder/ExpensiveGameFinder.cpp
+	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/expensive_game_finder/main.cpp scripts/expensive_game_finder/ExpensiveGameFinder.cpp -o $@
+
 simulate: dirs $(SIMULATE_GAMES_TARGET)
 	./$(SIMULATE_GAMES_TARGET) $(ARGS)
 
 single-game: dirs $(SINGLE_GAME_TARGET)
 	./$(SINGLE_GAME_TARGET) $(ARGS)
+
+expensive-game: dirs $(EXPENSIVE_GAME_FINDER_TARGET)
+	./$(EXPENSIVE_GAME_FINDER_TARGET) $(ARGS)
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
@@ -134,5 +141,6 @@ help:
 	@echo "  make test-all        - Run all tests"
 	@echo "  make simulate ARGS=\"<num_games> <num_threads>\" - Simulate multiple games"
 	@echo "  make single-game ARGS=\"<seed>\" - Debug a single game with specific seed"
+	@echo "  make expensive-game ARGS=\"<seed>\" - Find expensive (high-scoring) games"
 	@echo "  make clean           - Remove build artifacts"
 	@echo "  make help            - Show this help message"

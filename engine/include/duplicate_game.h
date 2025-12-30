@@ -18,7 +18,7 @@ class DuplicateGame {
     explicit DuplicateGame(const DAWG& dawg, unsigned int seed = 0);
 
     // Run a complete game from start to finish
-    void playGame(bool display = false);
+    void playGame(bool from_start=true, bool display = false);
 
     // Step-by-step execution (for debugging/visualization)
     bool playNextMove();  // Returns false when game is over

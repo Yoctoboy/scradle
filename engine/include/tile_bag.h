@@ -60,6 +60,7 @@ class TileBag {
     // Game state potential utilities
     bool contains(char letter) const;
     bool canDrawTiles(const std::string& letters);
+    bool canDrawTilesWithoutJoker(const std::string& letters);
 
    private:
     std::multiset<char> tiles_;

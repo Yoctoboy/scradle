@@ -9,7 +9,7 @@ namespace scradle {
 DuplicateGame::DuplicateGame(const DAWG& dawg, unsigned int seed)
     : dawg_(dawg), state_(seed), scorer_(), rng_(seed) {}
 
-void DuplicateGame::playGame(bool display) {
+void DuplicateGame::playGame(bool from_start, bool display) {
     // Initialize game
     state_.reset();
     state_.refillRack();

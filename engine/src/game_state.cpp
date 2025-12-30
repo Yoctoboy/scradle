@@ -1,6 +1,8 @@
 #include "game_state.h"
+#include "move_generator.h"
 
 #include <iostream>
+#include <sstream>
 
 namespace scradle {
 
@@ -27,6 +29,34 @@ void GameState::applyMove(const Move& move) {
     move_history_.push_back(move);
 }
 
+void GameState::undoLastMove() {
+    if (move_history_.empty()) {
+        return; // Nothing to undo
+    }
+
+    // Get the last move
+    const Move& last_move = move_history_.back();
+
+    // Remove tiles from board and return them to rack
+    for (const auto& placement : last_move.getPlacements()) {
+        if (placement.is_from_rack) {
+            // Remove tile from board
+            board_.setLetter(placement.row, placement.col, ' ');
+            // Return tile to rack
+            rack_.addTile(placement.is_blank ? '?' : placement.letter);
+        }
+    }
+
+    // Update statistics
+    total_score_ -= last_move.getScore();
+    if (last_move.isBingo()) {
+        bingo_count_--;
+    }
+
+    // Remove from move history
+    move_history_.pop_back();
+}
+
 void GameState::refillRack() {
     int tiles_needed = Rack::MAX_TILES - rack_.size();
     if (tiles_needed > 0) {
@@ -51,6 +81,44 @@ void GameState::refillRack() {
             rack_.addTile(tile);
         }
     }
+}
+
+bool GameState::findAndPlayBestMove(const DAWG& dawg, bool display) {
+    // Generate and get best move (already scored)
+    MoveGenerator move_gen(getBoard(), getRack(), dawg);
+    if (display) {
+        std::cout << "Move " << getMoveCount() + 1 << ": rack=" << getRack().toString();
+    }
+    std::vector<Move> best_moves = move_gen.getBestMove();
+
+    if (best_moves.empty()) {
+        return false;
+    }
+
+    // Filter moves based on move number
+    std::vector<Move> candidates;
+    if (getMoveCount() == 0) {
+        // For the first move, prefer horizontal moves
+        for (const auto& move : best_moves) {
+            if (move.getDirection() == Direction::HORIZONTAL) {
+                candidates.push_back(move);
+            }
+        }
+        // If no horizontal moves, use all moves
+        if (candidates.empty()) {
+            candidates = best_moves;
+        }
+    } else {
+        candidates = best_moves;
+    }
+
+    // Randomly select from candidates
+    std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
+    Move selected_move = candidates[0];
+
+    applyMove(selected_move);
+    if (display) std::cout << " -- move: " << selected_move.toString() << std::endl;
+    return true;
 }
 
 bool GameState::isGameOver() const {
@@ -98,16 +166,40 @@ void GameState::printSummary() const {
     std::cout << "Moves: " << move_history_.size() << "\n";
     std::cout << "Bingos: " << bingo_count_ << "\n\n";
 
-    // if (!move_history_.empty()) {
-    //     std::cout << "Move History:\n";
-    //     for (size_t i = 0; i < move_history_.size(); ++i) {
-    //         const Move& move = move_history_[i];
-    //         std::cout << (i + 1) << ". " << move.toString() << std::endl;
-    //     }
-    // }
+    if (!move_history_.empty()) {
+        std::cout << "Move History:\n";
+        for (size_t i = 0; i < move_history_.size(); ++i) {
+            const Move& move = move_history_[i];
+            std::cout << (i + 1) << ". " << move.toString() << std::endl;
+        }
+    }
 
     std::cout << "\nFinal Board:\n";
     board_.display();
+}
+
+std::string GameState::toString() const {
+
+    std::stringstream ss;
+
+    ss << "\n=== Duplicate Scrabble Game ===\n";
+    ss << "Seed: " << seed_ << "\n";
+    ss << "Final Score: " << total_score_ << "\n";
+    ss << "Moves: " << move_history_.size() << "\n";
+    ss << "Bingos: " << bingo_count_ << "\n\n";
+
+    if (!move_history_.empty()) {
+        ss << "Move History:\n";
+        for (size_t i = 0; i < move_history_.size(); ++i) {
+            const Move& move = move_history_[i];
+            ss << (i + 1) << ". " << move.toString() << std::endl;
+        }
+    }
+
+    ss << "\nFinal Board:\n";
+    ss << board_.toString();
+
+    return ss.str();
 }
 
 }  // namespace scradle

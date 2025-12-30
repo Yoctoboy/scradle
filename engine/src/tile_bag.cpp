@@ -216,4 +216,21 @@ bool TileBag::canDrawTiles(const std::string& letters) {
     return true;
 }
 
+bool TileBag::canDrawTilesWithoutJoker(const std::string& letters) {
+    // Create a temporary copy of the tiles to simulate drawing
+    std::multiset<char> temp_tiles = tiles_;
+
+    for (char letter : letters) {
+        auto it = temp_tiles.find(letter);
+        if (it != temp_tiles.end()) {
+            // Letter is available, remove it from the temp set
+            temp_tiles.erase(it);
+        } else {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 }  // namespace scradle

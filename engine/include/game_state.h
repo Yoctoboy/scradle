@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "board.h"
+#include "dawg.h"
 #include "move.h"
 #include "rack.h"
 #include "tile_bag.h"
@@ -29,6 +30,10 @@ class GameState {
 
     // Apply a move and update state
     void applyMove(const Move& move);
+    bool findAndPlayBestMove(const DAWG& dawg, bool display = false);
+
+    // Undo the last move and restore previous state
+    void undoLastMove();
 
     // Refill rack from tile bag (up to 7 tiles)
     // Checks for invalid racks and returns them to bag if necessary
@@ -49,6 +54,7 @@ class GameState {
 
     // Output game summary
     void printSummary() const;
+    std::string toString() const;
 
    private:
     Board board_;
