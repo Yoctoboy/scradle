@@ -9,6 +9,7 @@
 #include "../../engine/include/rack.h"
 #include "../../engine/include/scorer.h"
 #include "../../engine/include/tile_bag.h"
+#include "keyboard_input.h"
 
 namespace scradle {
 
@@ -17,6 +18,8 @@ ExpensiveGameFinder::ExpensiveGameFinder(const DAWG& dawg, unsigned int seed)
 
 int ExpensiveGameFinder::findExpensiveGame() {
     std::cout << "Starting expensive game search..." << std::endl;
+    std::cout << "(Press 'p' at any time to print the current grid state)"
+              << std::endl;
 
     // Step 1: Find three mutually compatible high-scoring 15-letter words
     auto [main_word1, main_word2, main_word3] = findCompatible15LetterWords();
@@ -48,6 +51,17 @@ int ExpensiveGameFinder::findExpensiveGame() {
 
     while (!game_state_.isGameOver() && attempts < MAX_ATTEMPTS) {
         attempts++;
+
+        // Check for keyboard input ('p' to print grid)
+        char key = checkKeyPress();
+        if (key == 'p' || key == 'P') {
+            std::cout << std::endl << "=== Current Grid State ===" << std::endl;
+            std::cout << game_state_.getBoard().toString() << std::endl;
+            std::cout << "Move count: " << game_state_.getMoveCount()
+                      << " | Total score: " << game_state_.getTotalScore()
+                      << std::endl;
+            std::cout << "==========================" << std::endl << std::endl;
+        }
 
         // Check if we're stuck - too many rejections in a row
         if (rejected_in_a_row >= MAX_REJECTED_BEFORE_BACKTRACK &&
@@ -127,13 +141,13 @@ int ExpensiveGameFinder::findExpensiveGame() {
                       << "Move " << game_state_.getMoveCount() << ": "
                       << best_move.toString()
                       << " - Total: " << game_state_.getTotalScore()
-                      << " | Needed tiles: " << needed_after_move << " (was "
-                      << previous_needed_tiles << ")" << std::endl;
+                      << " | Needed tiles: " << needed_after_move << std::endl;
             rejected_in_a_row = 0;
             previous_needed_tiles = needed_after_move;
             seen_grids.insert(current_grid);
         } else {
-            // Bad move - no progress made or placement became impossible or grid already seen
+            // Bad move - no progress made or placement became impossible or
+            // grid already seen
             game_state_.undoLastMove();
 
             // Return tiles to bag and clear rack to get a fresh draw
@@ -153,8 +167,7 @@ int ExpensiveGameFinder::findExpensiveGame() {
 
             std::cout << ((rejected_in_a_row > 1) ? "\r" : "")
                       << "Move rejected (" << rejected_in_a_row << "), "
-                      << rejection_reason
-                      << "..."
+                      << rejection_reason << "..."
                       << "                  " << std::flush;
         }
     }

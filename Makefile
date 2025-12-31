@@ -108,8 +108,8 @@ $(SIMULATE_GAMES_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/sim
 $(SINGLE_GAME_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/single_game.cpp
 	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/single_game.cpp -o $@
 
-$(EXPENSIVE_GAME_FINDER_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/expensive_game_finder/main.cpp scripts/expensive_game_finder/ExpensiveGameFinder.cpp
-	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/expensive_game_finder/main.cpp scripts/expensive_game_finder/ExpensiveGameFinder.cpp -o $@
+$(EXPENSIVE_GAME_FINDER_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/expensive_game_finder/main.cpp scripts/expensive_game_finder/ExpensiveGameFinder.cpp scripts/expensive_game_finder/keyboard_input.cpp
+	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/expensive_game_finder/main.cpp scripts/expensive_game_finder/ExpensiveGameFinder.cpp scripts/expensive_game_finder/keyboard_input.cpp -o $@
 
 simulate: dirs $(SIMULATE_GAMES_TARGET)
 	./$(SIMULATE_GAMES_TARGET) $(ARGS)

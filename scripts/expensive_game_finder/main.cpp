@@ -1,4 +1,5 @@
 #include "ExpensiveGameFinder.h"
+#include "keyboard_input.h"
 #include "../../engine/include/dawg.h"
 #include <iostream>
 #include <random>
@@ -29,8 +30,14 @@ int main(int argc, char* argv[]) {
     // Create the expensive game finder
     ExpensiveGameFinder finder(dawg, seed);
 
+    // Enable non-blocking keyboard input
+    setNonBlockingInput(true);
+
     // Run the expensive game search
     int final_score = finder.findExpensiveGame();
+
+    // Restore terminal settings
+    setNonBlockingInput(false);
 
     std::cout << "\n=== Expensive Game Finder Result ===" << std::endl;
     std::cout << "Final Score: " << final_score << std::endl;
