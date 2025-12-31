@@ -1,12 +1,14 @@
 #include "ExpensiveGameFinder.h"
-#include "../../engine/include/scorer.h"
-#include "../../engine/include/tile_bag.h"
-#include "../../engine/include/move_generator.h"
-#include "../../engine/include/rack.h"
+
+#include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <algorithm>
 #include <random>
+
+#include "../../engine/include/move_generator.h"
+#include "../../engine/include/rack.h"
+#include "../../engine/include/scorer.h"
+#include "../../engine/include/tile_bag.h"
 
 namespace scradle {
 
@@ -25,28 +27,37 @@ int ExpensiveGameFinder::findExpensiveGame() {
     }
 
     std::cout << "Found compatible 15-letter words:" << std::endl;
-    std::cout << "  Word 1: " << main_word1 << " (score: " << score15LetterWord(main_word1) << ")" << std::endl;
-    std::cout << "  Word 2: " << main_word2 << " (score: " << score15LetterWord(main_word2) << ")" << std::endl;
-    std::cout << "  Word 3: " << main_word3 << " (score: " << score15LetterWord(main_word3) << ")" << std::endl;
+    std::cout << "  Word 1: " << main_word1
+              << " (score: " << score15LetterWord(main_word1) << ")"
+              << std::endl;
+    std::cout << "  Word 2: " << main_word2
+              << " (score: " << score15LetterWord(main_word2) << ")"
+              << std::endl;
+    std::cout << "  Word 3: " << main_word3
+              << " (score: " << score15LetterWord(main_word3) << ")"
+              << std::endl;
 
     // Main game loop
     int attempts = 0;
     int rejected_in_a_row = 0;
-    const int MAX_ATTEMPTS = 50000; // Prevent infinite loops
-    const int MAX_REJECTED_BEFORE_BACKTRACK = 1000; // Backtrack if stuck
-    int previous_needed_tiles = 45; // Start with maximum (3 words × 15 letters)
+    const int MAX_ATTEMPTS = 50000;                  // Prevent infinite loops
+    const int MAX_REJECTED_BEFORE_BACKTRACK = 1000;  // Backtrack if stuck
+    int previous_needed_tiles =
+        45;  // Start with maximum (3 words × 15 letters)
+    std::unordered_set<std::string> seen_grids;  // Track seen grid states
 
     while (!game_state_.isGameOver() && attempts < MAX_ATTEMPTS) {
         attempts++;
 
         // Check if we're stuck - too many rejections in a row
-        if (rejected_in_a_row >= MAX_REJECTED_BEFORE_BACKTRACK && game_state_.getMoveCount() > 3) {
-
+        if (rejected_in_a_row >= MAX_REJECTED_BEFORE_BACKTRACK &&
+            game_state_.getMoveCount() > 3) {
             // Undo the last accepted move to try a different path
             game_state_.undoLastMove();
 
             // Recalculate progress tracking
-            previous_needed_tiles = calculateTotalNeededTiles(main_word1, main_word2, main_word3, game_state_.getBoard());
+            previous_needed_tiles = calculateTotalNeededTiles(
+                main_word1, main_word2, main_word3, game_state_.getBoard());
 
             // Reset rejection counter
             rejected_in_a_row = 0;
@@ -55,18 +66,22 @@ int ExpensiveGameFinder::findExpensiveGame() {
             std::string rack_tiles = game_state_.getRack().getTiles();
             game_state_.getTileBag().returnTiles(rack_tiles);
             game_state_.getRack().clear();
-            std::cout << std::endl << "Grid is stuck after " << MAX_REJECTED_BEFORE_BACKTRACK
-                      << " rejections. Backtracking one move (back to " << previous_needed_tiles << " needed tiles)" << std::endl;
+            std::cout << std::endl
+                      << "Grid is stuck after " << MAX_REJECTED_BEFORE_BACKTRACK
+                      << " rejections. Backtracking one move (back to "
+                      << previous_needed_tiles << " needed tiles)" << std::endl;
         }
 
         // Check if any of the 3 target words can be played in a single move
-        std::string playable_word = findPlayableWord(main_word1, main_word2, main_word3);
+        std::string playable_word =
+            findPlayableWord(main_word1, main_word2, main_word3);
         if (!playable_word.empty()) {
             // Play the target word directly!
             if (playSpecificWord(playable_word)) {
                 rejected_in_a_row = 0;
                 // Reset progress tracking after placing a target word
-                previous_needed_tiles = calculateTotalNeededTiles(main_word1, main_word2, main_word3, game_state_.getBoard());
+                previous_needed_tiles = calculateTotalNeededTiles(
+                    main_word1, main_word2, main_word3, game_state_.getBoard());
                 continue;
             }
         }
@@ -75,7 +90,8 @@ int ExpensiveGameFinder::findExpensiveGame() {
         game_state_.refillRack();
 
         // Generate all possible moves
-        MoveGenerator move_gen(game_state_.getBoard(), game_state_.getRack(), dawg_);
+        MoveGenerator move_gen(game_state_.getBoard(), game_state_.getRack(),
+                               dawg_);
         std::vector<Move> best_moves = move_gen.getBestMove();
 
         if (best_moves.empty()) {
@@ -83,28 +99,41 @@ int ExpensiveGameFinder::findExpensiveGame() {
             break;
         }
 
-        // Play the first best move (they all have the same score in duplicate Scrabble)
+        // Play the first best move (they all have the same score in duplicate
+        // Scrabble)
         Move best_move = best_moves[0];
         game_state_.applyMove(best_move);
 
         // Calculate needed tiles after the move
-        int needed_after_move = calculateTotalNeededTiles(main_word1, main_word2, main_word3, game_state_.getBoard());
+        int needed_after_move = calculateTotalNeededTiles(
+            main_word1, main_word2, main_word3, game_state_.getBoard());
 
-        // Check if we made progress AND it's still possible to place all 3 words
-        bool still_possible = canPlaceWordsOnGrid(main_word1, main_word2, main_word3, game_state_.getBoard());
-        bool made_progress = needed_after_move != -1 && needed_after_move < previous_needed_tiles;
+        // Check if we made progress AND it's still possible to place all 3
+        // words
+        bool still_possible = canPlaceWordsOnGridWithTripleWords(
+            main_word1, main_word2, main_word3, game_state_.getBoard());
+        bool made_progress = needed_after_move != -1 &&
+                             needed_after_move < previous_needed_tiles;
         bool early_move = game_state_.getMoveCount() <= 3;
 
-        if (still_possible && (made_progress || early_move)) {
-            // Good move - we made progress (or it's early) and placement is still possible
-            std::cout << std::endl << "Move " << game_state_.getMoveCount() << ": "
+        // Check if we've already seen this grid state
+        std::string current_grid = game_state_.getBoard().toString();
+        bool already_seen = seen_grids.count(current_grid) > 0;
+
+        if (still_possible && (made_progress || early_move) && !already_seen) {
+            // Good move - we made progress (or it's early) and placement is
+            // still possible
+            std::cout << std::endl
+                      << "Move " << game_state_.getMoveCount() << ": "
                       << best_move.toString()
                       << " - Total: " << game_state_.getTotalScore()
-                      << " | Needed tiles: " << needed_after_move << " (was " << previous_needed_tiles << ")" << std::endl;
+                      << " | Needed tiles: " << needed_after_move << " (was "
+                      << previous_needed_tiles << ")" << std::endl;
             rejected_in_a_row = 0;
             previous_needed_tiles = needed_after_move;
+            seen_grids.insert(current_grid);
         } else {
-            // Bad move - no progress made or placement became impossible
+            // Bad move - no progress made or placement became impossible or grid already seen
             game_state_.undoLastMove();
 
             // Return tiles to bag and clear rack to get a fresh draw
@@ -113,25 +142,36 @@ int ExpensiveGameFinder::findExpensiveGame() {
             game_state_.getRack().clear();
             rejected_in_a_row++;
 
-            std::cout << ((rejected_in_a_row > 1) ? "\r" : "") << "Move rejected (" << rejected_in_a_row << "), "
-                      << (!still_possible ? "placement impossible" : "no progress made") << "..."
-                      << "                  " << std::flush;
+            std::string rejection_reason;
+            if (!still_possible) {
+                rejection_reason = "placement impossible";
+            } else if (already_seen) {
+                rejection_reason = "grid already seen";
+            } else {
+                rejection_reason = "no progress made";
+            }
 
+            std::cout << ((rejected_in_a_row > 1) ? "\r" : "")
+                      << "Move rejected (" << rejected_in_a_row << "), "
+                      << rejection_reason
+                      << "..."
+                      << "                  " << std::flush;
         }
     }
 
-    std::cout << std::endl << "Max attempts reached,  board state:" << std::endl;
+    std::cout << std::endl
+              << "Max attempts reached,  board state:" << std::endl;
     std::cout << game_state_.getBoard().toString() << std::endl;
     std::cout << "Finishing normally" << std::endl;
     game_state_.refillRack();
-    while (!game_state_.isGameOver() && !game_state_.getRack().size() == 0){
+    while (!game_state_.isGameOver() && !game_state_.getRack().size() == 0) {
         game_state_.findAndPlayBestMove(dawg_, true);
         game_state_.refillRack();
     }
 
     std::cout << "\n=== Game Complete ===" << std::endl;
     std::cout << std::endl << "With words:" << std::endl;
-    std::cout << "- " << main_word1  << std::endl;
+    std::cout << "- " << main_word1 << std::endl;
     std::cout << "- " << main_word2 << std::endl;
     std::cout << "- " << main_word3 << std::endl;
     game_state_.printSummary();
@@ -139,7 +179,8 @@ int ExpensiveGameFinder::findExpensiveGame() {
     return game_state_.getTotalScore();
 }
 
-std::tuple<std::string, std::string, std::string> ExpensiveGameFinder::findCompatible15LetterWords() {
+std::tuple<std::string, std::string, std::string>
+ExpensiveGameFinder::findCompatible15LetterWords() {
     // Load all 15-letter words
     std::vector<std::string> words = load15LetterWords();
 
@@ -165,11 +206,14 @@ std::tuple<std::string, std::string, std::string> ExpensiveGameFinder::findCompa
 
     // Sort by score (descending)
     std::sort(scored_words.begin(), scored_words.end(),
-              [](const WordScore& a, const WordScore& b) { return a.score > b.score; });
+              [](const WordScore& a, const WordScore& b) {
+                  return a.score > b.score;
+              });
 
     // Add randomness: shuffle the top words to get different triplets each time
     int pool_size = 140;
-    std::vector<WordScore> top_words(scored_words.begin(), scored_words.begin() + pool_size);
+    std::vector<WordScore> top_words(scored_words.begin(),
+                                     scored_words.begin() + pool_size);
     std::random_device rd;
     std::mt19937 rng(rd());
     std::shuffle(top_words.begin(), top_words.end(), rng);
@@ -178,8 +222,10 @@ std::tuple<std::string, std::string, std::string> ExpensiveGameFinder::findCompa
     for (size_t i = 0; i < top_words.size(); ++i) {
         for (size_t j = i + 1; j < top_words.size(); ++j) {
             for (size_t k = j + 1; k < top_words.size(); ++k) {
-                if (areWordsCompatible(top_words[i].word, top_words[j].word, top_words[k].word)) {
-                    return {top_words[i].word, top_words[j].word, top_words[k].word};
+                if (areWordsCompatible(top_words[i].word, top_words[j].word,
+                                       top_words[k].word)) {
+                    return {top_words[i].word, top_words[j].word,
+                            top_words[k].word};
                 }
             }
         }
@@ -188,9 +234,11 @@ std::tuple<std::string, std::string, std::string> ExpensiveGameFinder::findCompa
     return {"", "", ""};
 }
 
-bool ExpensiveGameFinder::areWordsCompatible(const std::string& word1, const std::string& word2, const std::string& word3) {
-    // Three 15-letter words are compatible if we have enough tiles in a full French Scrabble
-    // bag to form all three words without using jokers
+bool ExpensiveGameFinder::areWordsCompatible(const std::string& word1,
+                                             const std::string& word2,
+                                             const std::string& word3) {
+    // Three 15-letter words are compatible if we have enough tiles in a full
+    // French Scrabble bag to form all three words without using jokers
 
     // Create a fresh tile bag to check if we can draw all three words
     TileBag temp_bag(0);  // Seed doesn't matter for this check
@@ -243,8 +291,10 @@ int ExpensiveGameFinder::score15LetterWord(const std::string& word) {
     return scorer.scoreMove(board, move);
 }
 
-RawMove ExpensiveGameFinder::createRawMoveForWord(const std::string& word, const Board& board,
-                                                   int row, int col, Direction direction) {
+RawMove ExpensiveGameFinder::createRawMoveForWord(const std::string& word,
+                                                  const Board& board, int row,
+                                                  int col,
+                                                  Direction direction) {
     RawMove raw_move;
     raw_move.start_row = row;
     raw_move.start_col = col;
@@ -282,8 +332,9 @@ RawMove ExpensiveGameFinder::createRawMoveForWord(const std::string& word, const
     return raw_move;
 }
 
-bool ExpensiveGameFinder::canPlaceWordsOnGrid(const std::string& word1, const std::string& word2,
-                                               const std::string& word3, const Board& board) {
+bool ExpensiveGameFinder::canPlaceWordsOnGridWithTripleWords(
+    const std::string& word1, const std::string& word2,
+    const std::string& word3, const Board& board) {
     // Create a vector of all three words to try all permutations
     std::vector<std::string> words = {word1, word2, word3};
 
@@ -291,28 +342,70 @@ bool ExpensiveGameFinder::canPlaceWordsOnGrid(const std::string& word1, const st
     std::sort(words.begin(), words.end());
     do {
         // Try vertical placement: columns 0, 7, 14 with current permutation
-        RawMove raw1_vert = createRawMoveForWord(words[0], board, 0, 0, Direction::VERTICAL);
-        RawMove raw2_vert = createRawMoveForWord(words[1], board, 0, 7, Direction::VERTICAL);
-        RawMove raw3_vert = createRawMoveForWord(words[2], board, 0, 14, Direction::VERTICAL);
+        RawMove raw1_vert =
+            createRawMoveForWord(words[0], board, 0, 0, Direction::VERTICAL);
+        RawMove raw2_vert =
+            createRawMoveForWord(words[1], board, 0, 7, Direction::VERTICAL);
+        RawMove raw3_vert =
+            createRawMoveForWord(words[2], board, 0, 14, Direction::VERTICAL);
 
         // Check if all vertical placements are possible (non-empty placements)
-        if (!raw1_vert.placements.empty() && !raw2_vert.placements.empty() && !raw3_vert.placements.empty()) {
-            // Collect all letters needed from rack (tiles not already on board)
+        if (!raw1_vert.placements.empty() && !raw2_vert.placements.empty() &&
+            !raw3_vert.placements.empty()) {
+            // For each word, check if it needs to be placed or is already fully
+            // placed A word is already placed if all its tiles are already on
+            // the board (no tiles from rack)
+            bool word1_already_placed = true;
+            bool word2_already_placed = true;
+            bool word3_already_placed = true;
+
             std::string needed_tiles;
             for (const auto& p : raw1_vert.placements) {
-                if (p.is_from_rack) needed_tiles += p.letter;
+                if (p.is_from_rack) {
+                    needed_tiles += p.letter;
+                    word1_already_placed = false;
+                }
             }
             for (const auto& p : raw2_vert.placements) {
-                if (p.is_from_rack) needed_tiles += p.letter;
+                if (p.is_from_rack) {
+                    needed_tiles += p.letter;
+                    word2_already_placed = false;
+                }
             }
             for (const auto& p : raw3_vert.placements) {
-                if (p.is_from_rack) needed_tiles += p.letter;
+                if (p.is_from_rack) {
+                    needed_tiles += p.letter;
+                    word3_already_placed = false;
+                }
+            }
+
+            // Check triple word squares: For vertical placement at (0,0),
+            // (0,7), (0,14) Only require the triple word square to be available
+            // if the word is not already placed
+            bool triple_words_ok = true;
+            if (!word1_already_placed &&
+                (!board.isEmpty(0, 0) || !board.isEmpty(7, 0) ||
+                 !board.isEmpty(14, 0))) {
+                triple_words_ok = false;
+            }
+            if (!word2_already_placed &&
+                (!board.isEmpty(0, 7) || !board.isEmpty(14, 7))) {
+                triple_words_ok = false;
+            }
+            if (!word3_already_placed &&
+                (!board.isEmpty(0, 14) || !board.isEmpty(7, 14) ||
+                 !board.isEmpty(14, 14))) {
+                triple_words_ok = false;
+            }
+
+            if (!triple_words_ok) {
+                continue;  // Try next permutation
             }
 
             // Check if the tile bag can provide all needed tiles (with jokers)
             TileBag temp_bag(0);
             if (!temp_bag.canDrawTiles(needed_tiles)) {
-                continue; // Try next permutation
+                continue;  // Try next permutation
             }
 
             // Create a temporary rack with all needed letters
@@ -332,28 +425,69 @@ bool ExpensiveGameFinder::canPlaceWordsOnGrid(const std::string& word1, const st
         }
 
         // Try horizontal placement: rows 0, 7, 14 with current permutation
-        RawMove raw1_horiz = createRawMoveForWord(words[0], board, 0, 0, Direction::HORIZONTAL);
-        RawMove raw2_horiz = createRawMoveForWord(words[1], board, 7, 0, Direction::HORIZONTAL);
-        RawMove raw3_horiz = createRawMoveForWord(words[2], board, 14, 0, Direction::HORIZONTAL);
+        RawMove raw1_horiz =
+            createRawMoveForWord(words[0], board, 0, 0, Direction::HORIZONTAL);
+        RawMove raw2_horiz =
+            createRawMoveForWord(words[1], board, 7, 0, Direction::HORIZONTAL);
+        RawMove raw3_horiz =
+            createRawMoveForWord(words[2], board, 14, 0, Direction::HORIZONTAL);
 
         // Check if all horizontal placements are possible
-        if (!raw1_horiz.placements.empty() && !raw2_horiz.placements.empty() && !raw3_horiz.placements.empty()) {
-            // Collect all letters needed from rack (tiles not already on board)
+        if (!raw1_horiz.placements.empty() && !raw2_horiz.placements.empty() &&
+            !raw3_horiz.placements.empty()) {
+            // For each word, check if it needs to be placed or is already fully
+            // placed
+            bool word1_already_placed = true;
+            bool word2_already_placed = true;
+            bool word3_already_placed = true;
+
             std::string needed_tiles;
             for (const auto& p : raw1_horiz.placements) {
-                if (p.is_from_rack) needed_tiles += p.letter;
+                if (p.is_from_rack) {
+                    needed_tiles += p.letter;
+                    word1_already_placed = false;
+                }
             }
             for (const auto& p : raw2_horiz.placements) {
-                if (p.is_from_rack) needed_tiles += p.letter;
+                if (p.is_from_rack) {
+                    needed_tiles += p.letter;
+                    word2_already_placed = false;
+                }
             }
             for (const auto& p : raw3_horiz.placements) {
-                if (p.is_from_rack) needed_tiles += p.letter;
+                if (p.is_from_rack) {
+                    needed_tiles += p.letter;
+                    word3_already_placed = false;
+                }
+            }
+
+            // Check triple word squares: For horizontal placement at (0,0),
+            // (7,0), (14,0) Only require the triple word square to be available
+            // if the word is not already placed
+            bool triple_words_ok = true;
+            if (!word1_already_placed &&
+                (!board.isEmpty(0, 0) || !board.isEmpty(0, 7) ||
+                 !board.isEmpty(0, 14))) {
+                triple_words_ok = false;
+            }
+            if (!word2_already_placed &&
+                (!board.isEmpty(7, 0) || !board.isEmpty(7, 14))) {
+                triple_words_ok = false;
+            }
+            if (!word3_already_placed &&
+                (!board.isEmpty(14, 0) || !board.isEmpty(14, 7) ||
+                 !board.isEmpty(14, 14))) {
+                triple_words_ok = false;
+            }
+
+            if (!triple_words_ok) {
+                continue;  // Try next permutation
             }
 
             // Check if the tile bag can provide all needed tiles (with jokers)
             TileBag temp_bag(0);
             if (!temp_bag.canDrawTiles(needed_tiles)) {
-                continue; // Try next permutation
+                continue;  // Try next permutation
             }
 
             // Create a temporary rack with all needed letters
@@ -376,8 +510,9 @@ bool ExpensiveGameFinder::canPlaceWordsOnGrid(const std::string& word1, const st
     return false;
 }
 
-std::string ExpensiveGameFinder::findPlayableWord(const std::string& word1, const std::string& word2,
-                                                    const std::string& word3) {
+std::string ExpensiveGameFinder::findPlayableWord(const std::string& word1,
+                                                  const std::string& word2,
+                                                  const std::string& word3) {
     std::vector<std::string> words = {word1, word2, word3};
     const Board& board = game_state_.getBoard();
 
@@ -399,7 +534,8 @@ std::string ExpensiveGameFinder::findPlayableWord(const std::string& word1, cons
 
             // Try vertical placement
             int vert_cols[] = {0, 7, 14};
-            RawMove raw_vert = createRawMoveForWord(word, board, 0, vert_cols[word_index], Direction::VERTICAL);
+            RawMove raw_vert = createRawMoveForWord(
+                word, board, 0, vert_cols[word_index], Direction::VERTICAL);
 
             if (!raw_vert.placements.empty()) {
                 // Count tiles needed from rack
@@ -432,7 +568,8 @@ std::string ExpensiveGameFinder::findPlayableWord(const std::string& word1, cons
 
             // Try horizontal placement
             int horiz_rows[] = {0, 7, 14};
-            RawMove raw_horiz = createRawMoveForWord(word, board, horiz_rows[word_index], 0, Direction::HORIZONTAL);
+            RawMove raw_horiz = createRawMoveForWord(
+                word, board, horiz_rows[word_index], 0, Direction::HORIZONTAL);
 
             if (!raw_horiz.placements.empty()) {
                 // Count tiles needed from rack
@@ -474,7 +611,8 @@ bool ExpensiveGameFinder::playSpecificWord(const std::string& word) {
     // Find the correct position and orientation for this word
     // Try all positions to find where it can be placed
     std::vector<std::pair<int, int>> positions_vert = {{0, 0}, {0, 7}, {0, 14}};
-    std::vector<std::pair<int, int>> positions_horiz = {{0, 0}, {7, 0}, {14, 0}};
+    std::vector<std::pair<int, int>> positions_horiz = {
+        {0, 0}, {7, 0}, {14, 0}};
 
     RawMove valid_move;
     std::string needed_tiles;
@@ -482,7 +620,8 @@ bool ExpensiveGameFinder::playSpecificWord(const std::string& word) {
 
     // Try vertical placements
     for (const auto& [row, col] : positions_vert) {
-        RawMove raw = createRawMoveForWord(word, board, row, col, Direction::VERTICAL);
+        RawMove raw =
+            createRawMoveForWord(word, board, row, col, Direction::VERTICAL);
         if (!raw.placements.empty()) {
             int tiles_from_rack = 0;
             std::string tiles;
@@ -515,7 +654,8 @@ bool ExpensiveGameFinder::playSpecificWord(const std::string& word) {
     // Try horizontal placements if not found
     if (!found) {
         for (const auto& [row, col] : positions_horiz) {
-            RawMove raw = createRawMoveForWord(word, board, row, col, Direction::HORIZONTAL);
+            RawMove raw = createRawMoveForWord(word, board, row, col,
+                                               Direction::HORIZONTAL);
             if (!raw.placements.empty()) {
                 int tiles_from_rack = 0;
                 std::string tiles;
@@ -559,7 +699,8 @@ bool ExpensiveGameFinder::playSpecificWord(const std::string& word) {
     }
 
     // Create the Move object from RawMove
-    Move move(valid_move.start_row, valid_move.start_col, valid_move.direction, word);
+    Move move(valid_move.start_row, valid_move.start_col, valid_move.direction,
+              word);
     for (const auto& p : valid_move.placements) {
         move.addPlacement(p);
     }
@@ -572,14 +713,17 @@ bool ExpensiveGameFinder::playSpecificWord(const std::string& word) {
     // Apply the move
     game_state_.applyMove(move);
 
-    std::cout << "\n\n*** PLAYED TARGET WORD: " << word << " (" << score << " pts) ***" << std::endl << std::endl;
+    std::cout << "\n\n*** PLAYED TARGET WORD: " << word << " (" << score
+              << " pts) ***" << std::endl
+              << std::endl;
     std::cout << "Total score: " << game_state_.getTotalScore() << std::endl;
 
     return true;
 }
 
-int ExpensiveGameFinder::countNeededTiles(const std::string& word, const Board& board,
-                                           int row, int col, Direction direction) {
+int ExpensiveGameFinder::countNeededTiles(const std::string& word,
+                                          const Board& board, int row, int col,
+                                          Direction direction) {
     // Create a RawMove to see what tiles would be needed
     RawMove raw_move = createRawMoveForWord(word, board, row, col, direction);
 
@@ -599,20 +743,25 @@ int ExpensiveGameFinder::countNeededTiles(const std::string& word, const Board& 
     return needed;
 }
 
-int ExpensiveGameFinder::calculateTotalNeededTiles(const std::string& word1, const std::string& word2,
-                                                     const std::string& word3, const Board& board) {
+int ExpensiveGameFinder::calculateTotalNeededTiles(const std::string& word1,
+                                                   const std::string& word2,
+                                                   const std::string& word3,
+                                                   const Board& board) {
     std::vector<std::string> words = {word1, word2, word3};
 
-    // We need to find the best permutation and orientation that minimizes total needed tiles
-    // Try all 6 permutations and both orientations
+    // We need to find the best permutation and orientation that minimizes total
+    // needed tiles Try all 6 permutations and both orientations
     int min_total_needed = -1;
 
     std::sort(words.begin(), words.end());
     do {
         // Try vertical placement: columns 0, 7, 14
-        int vert_needed1 = countNeededTiles(words[0], board, 0, 0, Direction::VERTICAL);
-        int vert_needed2 = countNeededTiles(words[1], board, 0, 7, Direction::VERTICAL);
-        int vert_needed3 = countNeededTiles(words[2], board, 0, 14, Direction::VERTICAL);
+        int vert_needed1 =
+            countNeededTiles(words[0], board, 0, 0, Direction::VERTICAL);
+        int vert_needed2 =
+            countNeededTiles(words[1], board, 0, 7, Direction::VERTICAL);
+        int vert_needed3 =
+            countNeededTiles(words[2], board, 0, 14, Direction::VERTICAL);
 
         if (vert_needed1 != -1 && vert_needed2 != -1 && vert_needed3 != -1) {
             int total = vert_needed1 + vert_needed2 + vert_needed3;
@@ -622,9 +771,12 @@ int ExpensiveGameFinder::calculateTotalNeededTiles(const std::string& word1, con
         }
 
         // Try horizontal placement: rows 0, 7, 14
-        int horiz_needed1 = countNeededTiles(words[0], board, 0, 0, Direction::HORIZONTAL);
-        int horiz_needed2 = countNeededTiles(words[1], board, 7, 0, Direction::HORIZONTAL);
-        int horiz_needed3 = countNeededTiles(words[2], board, 14, 0, Direction::HORIZONTAL);
+        int horiz_needed1 =
+            countNeededTiles(words[0], board, 0, 0, Direction::HORIZONTAL);
+        int horiz_needed2 =
+            countNeededTiles(words[1], board, 7, 0, Direction::HORIZONTAL);
+        int horiz_needed3 =
+            countNeededTiles(words[2], board, 14, 0, Direction::HORIZONTAL);
 
         if (horiz_needed1 != -1 && horiz_needed2 != -1 && horiz_needed3 != -1) {
             int total = horiz_needed1 + horiz_needed2 + horiz_needed3;

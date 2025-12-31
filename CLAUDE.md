@@ -28,5 +28,5 @@ All other Scrabble rules are kept the same.
 First implementation steps:
 - ExpensiveGameFinder class that handles a GameState, uses MoveGenerator to generate moves and has an entrypoint method
 - That entrypoint method does:
-    - Find 2 mutually compatible high-scoring 15-letter words (without joker), i.e. that can theoretically be placed simultaneously on the grid (can use the help of scripts/expensive_game_finder/score_15_letter_words.cpp implementation)
+    - Find 3 mutually compatible high-scoring 15-letter words (without joker), i.e. that can theoretically be placed simultaneously on the grid (can use the help of scripts/expensive_game_finder/score_15_letter_words.cpp implementation)
     - Is able to manage a gamestate, add and remove the last made move from it (that may have to be implemented in the GameState class)

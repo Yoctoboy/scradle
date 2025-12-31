@@ -7,6 +7,7 @@
 #include "../../engine/include/move.h"
 #include <vector>
 #include <string>
+#include <unordered_set>
 
 namespace scradle {
 
@@ -72,13 +73,14 @@ private:
     /**
      * Check if three words can be placed on the grid in specific positions
      * Tries both orientations: vertical (columns 0,7,14) and horizontal (rows 0,7,14)
+     * Also verifies that triple word squares are still available for words not yet placed
      * @param word1 First 15-letter word
      * @param word2 Second 15-letter word
      * @param word3 Third 15-letter word
      * @param board The current board state
-     * @return true if the words can be placed in either orientation
+     * @return true if the words can be placed in either orientation with triple word bonuses
      */
-    bool canPlaceWordsOnGrid(const std::string& word1, const std::string& word2,
+    bool canPlaceWordsOnGridWithTripleWords(const std::string& word1, const std::string& word2,
                              const std::string& word3, const Board& board);
 
     /**
