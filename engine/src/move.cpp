@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+using std::string;
+
 namespace scradle {
 
 const char* row_labels = "ABCDEFGHIJKLMNO";
@@ -34,7 +36,23 @@ bool Move::isBingo() const {
 std::string Move::toString() const {
     std::stringstream ss;
 
-    ss << word_ << " at ";
+    // Print the whole word, accounting for blank tiles
+    for (size_t i = 0; i < word_.length(); i++) {
+        // Find if this position has a blank tile
+        bool is_blank = false;
+        int row = (direction_ == Direction::HORIZONTAL) ? start_row_ : start_row_ + i;
+        int col = (direction_ == Direction::HORIZONTAL) ? start_col_ + i : start_col_;
+
+        for (const auto& placement : placements_) {
+            if (placement.row == row && placement.col == col && placement.is_blank) {
+                is_blank = true;
+                break;
+            }
+        }
+
+        ss << (is_blank ? char(std::tolower(static_cast<unsigned char>(word_[i]))) : word_[i]);
+    }
+    ss << " at ";
 
     if (direction_ == Direction::HORIZONTAL) {
         // Horizontal: ROW+COL (e.g., H4)

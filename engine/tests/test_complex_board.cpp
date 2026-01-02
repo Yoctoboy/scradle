@@ -153,9 +153,9 @@ void test_board_scenario_2() {
         cout << "    " << i << ": " << top_moves[i].toString() << endl;
     }
 
-    assert_equal(std::string("WAOUH at A8 [48 pts]"), top_moves[0].toString(), "Top 1 move is WAOUH at A8 [48 pts]");
+    assert_equal(std::string("WAoUH at A8 [48 pts]"), top_moves[0].toString(), "Top 1 move is WAoUH at A8 [48 pts]");
     assert_equal(std::string("WAX at 6F [41 pts]"), top_moves[1].toString(), "Top 2 move is WAX at 6F [41 pts]");
-    assert_equal(std::string("WAX at 6F [40 pts]"), top_moves[2].toString(), "Top 3 move is WAX at 6F [40 pts]");
+    assert_equal(std::string("WaX at 6F [40 pts]"), top_moves[2].toString(), "Top 3 move is WaX at 6F [40 pts]");
 }
 
 void test_board_scenario_3() {
@@ -345,14 +345,15 @@ int main() {
 
     // test_board_parser();
     // test_example_board();
-    TIME_TEST("scenario 1", test_board_scenario_1);
-    TIME_TEST("scenario 2", test_board_scenario_2);
-    // test_board_scenario_2();
-    // test_board_scenario_3();
-    // test_board_scenario_4();
-    // test_board_scenario_5();
-    // test_board_scenario_6();
-    // test_board_scenario_7();
+    // TIME_TEST("scenario 1", test_board_scenario_1);
+    // TIME_TEST("scenario 2", test_board_scenario_2);
+    test_board_scenario_1();
+    test_board_scenario_2();
+    test_board_scenario_3();
+    test_board_scenario_4();
+    test_board_scenario_5();
+    test_board_scenario_6();
+    test_board_scenario_7();
 
     print_summary();
 
