@@ -28,11 +28,29 @@ int ExpensiveGameFinder::findExpensiveGame() {
 
     // Step 1: Find three mutually compatible high-scoring 15-letter words
     auto [main_word1, main_word2, main_word3] = findCompatible15LetterWords();
-
     if (main_word1.empty() || main_word2.empty() || main_word3.empty()) {
         std::cerr << "Could not find compatible 15-letter words" << std::endl;
         return 0;
     }
+
+    // Pre-calculate all valid substrings for the main words (they never change)
+    std::cout << "Pre-calculating valid substrings..." << std::endl;
+    std::vector<SubstringInfo> substrings1 = findValidSubstrings(main_word1);
+    std::vector<SubstringInfo> substrings2 = findValidSubstrings(main_word2);
+    std::vector<SubstringInfo> substrings3 = findValidSubstrings(main_word3);
+
+    std::vector<SubstringInfo> all_substrings;
+    all_substrings.insert(all_substrings.end(), substrings1.begin(), substrings1.end());
+    all_substrings.insert(all_substrings.end(), substrings2.begin(), substrings2.end());
+    all_substrings.insert(all_substrings.end(), substrings3.begin(), substrings3.end());
+
+    // Sort by length (descending) - try longer substrings first
+    std::sort(all_substrings.begin(), all_substrings.end(),
+              [](const SubstringInfo& a, const SubstringInfo& b) {
+                  return a.substring.length() > b.substring.length();
+              });
+
+    std::cout << "Found " << all_substrings.size() << " valid substrings total" << std::endl;
 
     // Main game loop
     int attempts = 0;
@@ -49,8 +67,7 @@ int ExpensiveGameFinder::findExpensiveGame() {
         attempts++;
 
         // Check if we're stuck - too many rejections in a row
-        if (rejected_in_a_row >= MAX_REJECTED_MOVES_BEFORE_BACKTRACK &&
-            game_state_.getMoveCount() > 3) {
+        if (rejected_in_a_row >= MAX_REJECTED_MOVES_BEFORE_BACKTRACK) {
             // Undo the last accepted move to try a different path
             game_state_.undoLastMove();
 
@@ -86,6 +103,24 @@ int ExpensiveGameFinder::findExpensiveGame() {
                     main_word1, main_word2, main_word3, game_state_.getBoard());
                 // Target word placement always counts as progress
                 progress_history.push_back(true);
+                continue;
+            }
+        }
+
+        // Try to place a substring of one of the main words, if the last loop landed a move
+        if (rejected_in_a_row == 0){
+            if (tryPlaceAnySubstring(substrings1, substrings2, substrings3,
+                                    main_word1, main_word2, main_word3)) {
+                rejected_in_a_row = 0;
+                // Recalculate progress tracking after placing a substring
+                previous_needed_tiles = calculateTotalNeededTiles(
+                    main_word1, main_word2, main_word3, game_state_.getBoard());
+                // Substring placement counts as progress
+                progress_history.push_back(true);
+
+                std::cout << "Move " << game_state_.getMoveCount()
+                        << " - Total: " << game_state_.getTotalScore()
+                        << " | Needed tiles: " << previous_needed_tiles << std::endl;
                 continue;
             }
         }
@@ -179,15 +214,16 @@ int ExpensiveGameFinder::findExpensiveGame() {
                       << "                  " << std::flush;
         }
     }
-
-    std::cout << std::endl
-              << "Max attempts reached,  board state:" << std::endl;
-    std::cout << game_state_.getBoard().toString() << std::endl;
-    std::cout << "Finishing normally" << std::endl;
-    game_state_.refillRack();
-    while (!game_state_.isGameOver() && !game_state_.getRack().size() == 0) {
-        game_state_.findAndPlayBestMove(dawg_, true);
+    if (attempts >= MAX_MAIN_LOOPS) {
+        std::cout << std::endl
+                << "Max attempts reached,  board state:" << std::endl;
+        std::cout << game_state_.getBoard().toString() << std::endl;
+        std::cout << "Finishing normally" << std::endl;
         game_state_.refillRack();
+        while (!game_state_.isGameOver() && !game_state_.getRack().size() == 0) {
+            game_state_.findAndPlayBestMove(dawg_, true);
+            game_state_.refillRack();
+        }
     }
 
     std::cout << "\n=== Game Complete ===" << std::endl;
@@ -332,7 +368,7 @@ RawMove ExpensiveGameFinder::createRawMoveForWord(const std::string& word,
     raw_move.direction = direction;
 
     // Place all 15 letters of the word
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; i < word.length(); i++) {
         int current_row = row;
         int current_col = col;
 
@@ -454,10 +490,23 @@ ExpensiveGameFinder::PlacementConfiguration ExpensiveGameFinder::canPlaceWordsOn
                 move_gen.isValidMove(raw2_vert) &&
                 move_gen.isValidMove(raw3_vert)) {
                 // Populate and return the valid configuration
+                // Map the permuted words back to the original order
                 config.is_valid = true;
-                config.word1_info = WordPlacementInfo(words[0], 0, 0, Direction::VERTICAL, word1_already_placed);
-                config.word2_info = WordPlacementInfo(words[1], 0, 7, Direction::VERTICAL, word2_already_placed);
-                config.word3_info = WordPlacementInfo(words[2], 0, 14, Direction::VERTICAL, word3_already_placed);
+
+                // Create placement infos for the permuted words
+                std::vector<std::pair<std::string, WordPlacementInfo>> permuted_placements = {
+                    {words[0], WordPlacementInfo(words[0], 0, 0, Direction::VERTICAL, word1_already_placed)},
+                    {words[1], WordPlacementInfo(words[1], 0, 7, Direction::VERTICAL, word2_already_placed)},
+                    {words[2], WordPlacementInfo(words[2], 0, 14, Direction::VERTICAL, word3_already_placed)}
+                };
+
+                // Map back to original word order
+                for (const auto& [word, placement] : permuted_placements) {
+                    if (word == word1) config.word1_info = placement;
+                    else if (word == word2) config.word2_info = placement;
+                    else if (word == word3) config.word3_info = placement;
+                }
+
                 return config;
             }
         }
@@ -541,10 +590,23 @@ ExpensiveGameFinder::PlacementConfiguration ExpensiveGameFinder::canPlaceWordsOn
                 move_gen.isValidMove(raw2_horiz) &&
                 move_gen.isValidMove(raw3_horiz)) {
                 // Populate and return the valid configuration
+                // Map the permuted words back to the original order
                 config.is_valid = true;
-                config.word1_info = WordPlacementInfo(words[0], 0, 0, Direction::HORIZONTAL, word1_already_placed);
-                config.word2_info = WordPlacementInfo(words[1], 7, 0, Direction::HORIZONTAL, word2_already_placed);
-                config.word3_info = WordPlacementInfo(words[2], 14, 0, Direction::HORIZONTAL, word3_already_placed);
+
+                // Create placement infos for the permuted words
+                std::vector<std::pair<std::string, WordPlacementInfo>> permuted_placements = {
+                    {words[0], WordPlacementInfo(words[0], 0, 0, Direction::HORIZONTAL, word1_already_placed)},
+                    {words[1], WordPlacementInfo(words[1], 7, 0, Direction::HORIZONTAL, word2_already_placed)},
+                    {words[2], WordPlacementInfo(words[2], 14, 0, Direction::HORIZONTAL, word3_already_placed)}
+                };
+
+                // Map back to original word order
+                for (const auto& [word, placement] : permuted_placements) {
+                    if (word == word1) config.word1_info = placement;
+                    else if (word == word2) config.word2_info = placement;
+                    else if (word == word3) config.word3_info = placement;
+                }
+
                 return config;
             }
         }
@@ -845,4 +907,206 @@ void ExpensiveGameFinder::checkKeyPressAndPrintBoard() {
             std::cout << "==========================" << std::endl << std::endl;
         }
 }
+
+std::vector<ExpensiveGameFinder::SubstringInfo> ExpensiveGameFinder::findValidSubstrings(const std::string& word) {
+    std::vector<SubstringInfo> valid_substrings;
+
+    // Try all contiguous substrings of the word
+    for (size_t start = 0; start < word.length(); ++start) {
+        for (size_t length = 2; length <= std::min(word.length() - start, word.length() - 1); ++length) {
+            std::string substring = word.substr(start, length);
+
+            // Check if this substring is a valid word in the dictionary
+            if (dawg_.contains(substring)) {
+                valid_substrings.emplace_back(substring, start);
+            }
+        }
+    }
+
+    // Sort by length in descending order (longest substrings first)
+    std::sort(valid_substrings.begin(), valid_substrings.end(),
+              [](const SubstringInfo& a, const SubstringInfo& b) {
+                  return a.substring.length() > b.substring.length();
+              });
+
+    return valid_substrings;
+}
+
+bool ExpensiveGameFinder::tryPlaceSubstring(const std::string& substring,
+                                           const WordPlacementInfo& word_info) {
+    bool DEBUG = false;
+    const Board& board = game_state_.getBoard();
+
+    if(DEBUG) {
+        std::cout << "[DEBUG] Trying substring: \"" << substring
+        << "\" from word: \"" << word_info.word << "\"" << std::endl;
+    }
+
+    // Skip if this word is already fully placed
+    if (word_info.already_placed) {
+        if(DEBUG) std::cout << "[DEBUG] -> Word already placed, skipping" << std::endl;
+        return false;
+    }
+
+    // Check if substring appears in this main word
+    size_t pos = word_info.word.find(substring);
+    if (pos == std::string::npos) {
+        if(DEBUG) std::cout << "[DEBUG] -> Substring not found in main word" << std::endl;
+        return false;  // Substring not in this word
+    }
+
+    if(DEBUG) std::cout << "[DEBUG] -> Substring found at position " << pos << " in main word" << std::endl;
+
+    // Calculate where this substring would be placed on the board
+    int substring_row = word_info.row;
+    int substring_col = word_info.col;
+
+    if (word_info.direction == Direction::VERTICAL) {
+        substring_row += pos;
+    } else {
+        substring_col += pos;
+    }
+    if(DEBUG) {
+        std::cout << "[DEBUG] -> Target position: (" << substring_row << ", " << substring_col
+              << ") " << (word_info.direction == Direction::VERTICAL ? "VERTICAL" : "HORIZONTAL") << std::endl;
+    }
+
+    // Try to create a RawMove for this substring
+    RawMove raw_move = createRawMoveForWord(substring, board, substring_row, substring_col, word_info.direction);
+
+    // Check if the placement is valid (some tiles already on board match)
+    if (raw_move.placements.empty()) {
+        if(DEBUG) std::cout << "[DEBUG] -> Invalid placement (conflict with existing tiles)" << std::endl;
+        return false;  // Invalid placement (conflict with existing tiles)
+    }
+
+    // Count tiles needed from rack
+    std::string needed_tiles;
+    for (const auto& p : raw_move.placements) {
+        if (p.is_from_rack) {
+            needed_tiles += p.letter;
+        }
+    }
+
+    if(DEBUG) std::cout << "[DEBUG] -> Needs " << needed_tiles.length() << " tiles: \"" << needed_tiles << "\"" << std::endl;
+
+    // Check if we need 7 or fewer tiles and if tiles are available
+    if (needed_tiles.length() > 7 || needed_tiles.empty()) {
+        if(DEBUG) std::cout << "[DEBUG] -> Need " << (needed_tiles.empty() ? "0" : ">7") << " tiles, skipping" << std::endl;
+        return false;
+    }
+
+    // Check if the tile bag can provide these tiles
+    TileBag temp_bag = game_state_.getTileBag();
+    if (!temp_bag.canDrawTiles(needed_tiles)) {
+        if(DEBUG) std::cout << "[DEBUG] -> Tiles not available in bag" << std::endl;
+        return false;
+    }
+
+    if(DEBUG) std::cout << "[DEBUG] -> Tiles available! Building rack and generating moves..." << std::endl;
+
+    // Build a 7-tile rack: needed tiles + random tiles to fill up to 7
+    game_state_.getRack().clear();
+
+    // First, draw the needed tiles
+    for (char c : needed_tiles) {
+        char drawn = game_state_.getTileBag().drawTile(c);
+        game_state_.getRack().addTile(drawn);
+    }
+
+    // Fill the rest with random tiles (up to 7 total)
+    int tiles_to_add = 7 - needed_tiles.length();
+    for (int i = 0; i < tiles_to_add; ++i) {
+        if (game_state_.getTileBag().remainingCount() > 0) {
+            char random_tile = game_state_.getTileBag().drawTile();
+            game_state_.getRack().addTile(random_tile);
+        }
+    }
+
+    // Generate all possible moves with this rack
+    MoveGenerator move_gen(board, game_state_.getRack(), dawg_);
+    std::vector<Move> best_moves = move_gen.getBestMove();
+
+    if(DEBUG) std::cout << "[DEBUG] -> Generated " << best_moves.size() << " best moves" << std::endl;
+
+    // Check if any of the best moves is exactly our substring at the right position
+    bool found = false;
+    for (const auto& move : best_moves) {
+        if(DEBUG) {
+            std::cout << "[DEBUG]   - Move: " << move.toString()
+                  << " at (" << move.getStartRow() << "," << move.getStartCol() << ")" << std::endl;
+        }
+
+        if (move.getWord() == substring &&
+            move.getStartRow() == substring_row &&
+            move.getStartCol() == substring_col &&
+            move.getDirection() == word_info.direction) {
+            // Found it! Apply this move
+            game_state_.applyMove(move);
+
+            std::cout << "\n*** PLACED SUBSTRING: " << substring
+                      << " (from " << word_info.word << ") - "
+                      << move.getScore() << " pts ***" << std::endl;
+
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        if(DEBUG) std::cout << "[DEBUG] -> No matching move found" << std::endl;
+        // If we didn't find the exact move, return the tiles to the bag
+        std::string rack_tiles = game_state_.getRack().getTiles();
+        game_state_.getTileBag().returnTiles(rack_tiles);
+        game_state_.getRack().clear();
+        return false;
+    }
+
+    return true;
+}
+
+bool ExpensiveGameFinder::tryPlaceAnySubstring(const std::vector<SubstringInfo>& substrings1,
+                                              const std::vector<SubstringInfo>& substrings2,
+                                              const std::vector<SubstringInfo>& substrings3,
+                                              const std::string& main_word1,
+                                              const std::string& main_word2,
+                                              const std::string& main_word3) {
+    // Get the current placement configuration
+    PlacementConfiguration config = canPlaceWordsOnGridWithTripleWords(
+        main_word1, main_word2, main_word3, game_state_.getBoard());
+
+    if (!config.is_valid) {
+        return false;  // Can't place the main words anymore
+    }
+
+    // Try substrings for word 1 if it's not already placed
+    if (!config.word1_info.already_placed) {
+        for (const auto& substring_info : substrings1) {
+            if (tryPlaceSubstring(substring_info.substring, config.word1_info)) {
+                return true;
+            }
+        }
+    }
+
+    // Try substrings for word 2 if it's not already placed
+    if (!config.word2_info.already_placed) {
+        for (const auto& substring_info : substrings2) {
+            if (tryPlaceSubstring(substring_info.substring, config.word2_info)) {
+                return true;
+            }
+        }
+    }
+
+    // Try substrings for word 3 if it's not already placed
+    if (!config.word3_info.already_placed) {
+        for (const auto& substring_info : substrings3) {
+            if (tryPlaceSubstring(substring_info.substring, config.word3_info)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 }  // namespace scradle

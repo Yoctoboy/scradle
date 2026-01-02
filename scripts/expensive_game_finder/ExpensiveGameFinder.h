@@ -186,20 +186,26 @@ private:
     /**
      * Try to place a substring by finding the best move that matches it
      * @param substring The substring to place
-     * @param config The current placement configuration for the main words
+     * @param word_info Placement info for the main word containing this substring
      * @return true if a substring was successfully placed
      */
     bool tryPlaceSubstring(const std::string& substring,
-                          const PlacementConfiguration& config);
+                          const WordPlacementInfo& word_info);
 
     /**
-     * Try to place any substring from the three main words
+     * Try to place any substring from pre-calculated lists
+     * @param substrings1 Substrings for main_word1
+     * @param substrings2 Substrings for main_word2
+     * @param substrings3 Substrings for main_word3
      * @param main_word1 First main word
      * @param main_word2 Second main word
      * @param main_word3 Third main word
      * @return true if a substring was successfully placed
      */
-    bool tryPlaceAnySubstring(const std::string& main_word1,
+    bool tryPlaceAnySubstring(const std::vector<SubstringInfo>& substrings1,
+                             const std::vector<SubstringInfo>& substrings2,
+                             const std::vector<SubstringInfo>& substrings3,
+                             const std::string& main_word1,
                              const std::string& main_word2,
                              const std::string& main_word3);
 
