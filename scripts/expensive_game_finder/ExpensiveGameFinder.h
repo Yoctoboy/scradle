@@ -19,6 +19,44 @@ namespace scradle {
 class ExpensiveGameFinder {
 public:
     /**
+     * WordPlacementInfo holds information about where a word would be placed
+     */
+    struct WordPlacementInfo {
+        std::string word;
+        int row;
+        int col;
+        Direction direction;
+        bool already_placed;  // True if the word is already fully on the board
+
+        WordPlacementInfo() : row(-1), col(-1), direction(Direction::HORIZONTAL), already_placed(false) {}
+        WordPlacementInfo(const std::string& w, int r, int c, Direction d, bool placed)
+            : word(w), row(r), col(c), direction(d), already_placed(placed) {}
+    };
+
+    /**
+     * PlacementConfiguration holds the complete placement info for all 3 main words
+     */
+    struct PlacementConfiguration {
+        WordPlacementInfo word1_info;
+        WordPlacementInfo word2_info;
+        WordPlacementInfo word3_info;
+        bool is_valid;
+
+        PlacementConfiguration() : is_valid(false) {}
+    };
+
+    /**
+     * SubstringInfo holds information about a valid substring of a main word
+     */
+    struct SubstringInfo {
+        std::string substring;      // The substring itself
+        int start_position;         // Position in the main word where it starts (0-indexed)
+
+        SubstringInfo(const std::string& sub, int pos)
+            : substring(sub), start_position(pos) {}
+    };
+
+    /**
      * Constructor
      * @param dawg Reference to the dictionary DAWG for word validation
      * @param seed Random seed for reproducibility
@@ -79,9 +117,9 @@ private:
      * @param word2 Second 15-letter word
      * @param word3 Third 15-letter word
      * @param board The current board state
-     * @return true if the words can be placed in either orientation with triple word bonuses
+     * @return PlacementConfiguration with is_valid=true if words can be placed, false otherwise
      */
-    bool canPlaceWordsOnGridWithTripleWords(const std::string& word1, const std::string& word2,
+    PlacementConfiguration canPlaceWordsOnGridWithTripleWords(const std::string& word1, const std::string& word2,
                              const std::string& word3, const Board& board);
 
     /**
@@ -137,6 +175,33 @@ private:
                                     const std::string& word3, const Board& board);
 
     void checkKeyPressAndPrintBoard();
+
+    /**
+     * Find all valid substrings of a word that exist in the dictionary
+     * @param word The main word to extract substrings from
+     * @return Vector of SubstringInfo containing valid substrings and their positions
+     */
+    std::vector<SubstringInfo> findValidSubstrings(const std::string& word);
+
+    /**
+     * Try to place a substring by finding the best move that matches it
+     * @param substring The substring to place
+     * @param config The current placement configuration for the main words
+     * @return true if a substring was successfully placed
+     */
+    bool tryPlaceSubstring(const std::string& substring,
+                          const PlacementConfiguration& config);
+
+    /**
+     * Try to place any substring from the three main words
+     * @param main_word1 First main word
+     * @param main_word2 Second main word
+     * @param main_word3 Third main word
+     * @return true if a substring was successfully placed
+     */
+    bool tryPlaceAnySubstring(const std::string& main_word1,
+                             const std::string& main_word2,
+                             const std::string& main_word3);
 
     GameState game_state_;
     const DAWG& dawg_;

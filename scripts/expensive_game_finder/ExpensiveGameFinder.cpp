@@ -114,8 +114,9 @@ int ExpensiveGameFinder::findExpensiveGame() {
 
         // Check if we made progress AND it's still possible to place all 3
         // words
-        bool still_possible = canPlaceWordsOnGridWithTripleWords(
+        PlacementConfiguration placement_config = canPlaceWordsOnGridWithTripleWords(
             main_word1, main_word2, main_word3, game_state_.getBoard());
+        bool still_possible = placement_config.is_valid;
         bool made_progress = needed_after_move != -1 &&
                              needed_after_move < previous_needed_tiles;
         bool early_move = game_state_.getMoveCount() <= 3;
@@ -362,9 +363,11 @@ RawMove ExpensiveGameFinder::createRawMoveForWord(const std::string& word,
     return raw_move;
 }
 
-bool ExpensiveGameFinder::canPlaceWordsOnGridWithTripleWords(
+ExpensiveGameFinder::PlacementConfiguration ExpensiveGameFinder::canPlaceWordsOnGridWithTripleWords(
     const std::string& word1, const std::string& word2,
     const std::string& word3, const Board& board) {
+    PlacementConfiguration config;
+
     // Create a vector of all three words to try all permutations
     std::vector<std::string> words = {word1, word2, word3};
 
@@ -450,7 +453,12 @@ bool ExpensiveGameFinder::canPlaceWordsOnGridWithTripleWords(
             if (move_gen.isValidMove(raw1_vert) &&
                 move_gen.isValidMove(raw2_vert) &&
                 move_gen.isValidMove(raw3_vert)) {
-                return true;
+                // Populate and return the valid configuration
+                config.is_valid = true;
+                config.word1_info = WordPlacementInfo(words[0], 0, 0, Direction::VERTICAL, word1_already_placed);
+                config.word2_info = WordPlacementInfo(words[1], 0, 7, Direction::VERTICAL, word2_already_placed);
+                config.word3_info = WordPlacementInfo(words[2], 0, 14, Direction::VERTICAL, word3_already_placed);
+                return config;
             }
         }
 
@@ -532,12 +540,18 @@ bool ExpensiveGameFinder::canPlaceWordsOnGridWithTripleWords(
             if (move_gen.isValidMove(raw1_horiz) &&
                 move_gen.isValidMove(raw2_horiz) &&
                 move_gen.isValidMove(raw3_horiz)) {
-                return true;
+                // Populate and return the valid configuration
+                config.is_valid = true;
+                config.word1_info = WordPlacementInfo(words[0], 0, 0, Direction::HORIZONTAL, word1_already_placed);
+                config.word2_info = WordPlacementInfo(words[1], 7, 0, Direction::HORIZONTAL, word2_already_placed);
+                config.word3_info = WordPlacementInfo(words[2], 14, 0, Direction::HORIZONTAL, word3_already_placed);
+                return config;
             }
         }
     } while (std::next_permutation(words.begin(), words.end()));
 
-    return false;
+    // No valid configuration found
+    return config;  // config.is_valid is already false from initialization
 }
 
 std::string ExpensiveGameFinder::findPlayableMainWord(const std::string& word1,
