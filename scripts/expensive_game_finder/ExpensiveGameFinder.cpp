@@ -14,9 +14,12 @@
 namespace scradle {
 
 ExpensiveGameFinder::ExpensiveGameFinder(const DAWG& dawg, unsigned int seed)
-    : game_state_(seed), dawg_(dawg) {}
+    : game_state_(seed), dawg_(dawg), rng_(seed) {}
 
 int ExpensiveGameFinder::findExpensiveGame() {
+    const int MAX_MAIN_LOOPS = 100000;                  // Prevent infinite loops
+    const int MAX_REJECTED_MOVES_BEFORE_BACKTRACK = 2000;  // Backtrack if stuck
+
     std::cout << "Starting expensive game search..." << std::endl;
     std::cout << "(Press 'p' at any time to print the current grid state)"
               << std::endl;
@@ -29,42 +32,19 @@ int ExpensiveGameFinder::findExpensiveGame() {
         return 0;
     }
 
-    std::cout << "Found compatible 15-letter words:" << std::endl;
-    std::cout << "  Word 1: " << main_word1
-              << " (score: " << score15LetterWord(main_word1) << ")"
-              << std::endl;
-    std::cout << "  Word 2: " << main_word2
-              << " (score: " << score15LetterWord(main_word2) << ")"
-              << std::endl;
-    std::cout << "  Word 3: " << main_word3
-              << " (score: " << score15LetterWord(main_word3) << ")"
-              << std::endl;
-
     // Main game loop
     int attempts = 0;
     int rejected_in_a_row = 0;
-    const int MAX_ATTEMPTS = 50000;                  // Prevent infinite loops
-    const int MAX_REJECTED_BEFORE_BACKTRACK = 1000;  // Backtrack if stuck
     int previous_needed_tiles =
         45;  // Start with maximum (3 words × 15 letters)
     std::unordered_set<std::string> seen_grids;  // Track seen grid states
 
-    while (!game_state_.isGameOver() && attempts < MAX_ATTEMPTS) {
+    while (!game_state_.isGameOver() && attempts < MAX_MAIN_LOOPS) {
+        checkKeyPressAndPrintBoard();
         attempts++;
 
-        // Check for keyboard input ('p' to print grid)
-        char key = checkKeyPress();
-        if (key == 'p' || key == 'P') {
-            std::cout << std::endl << "=== Current Grid State ===" << std::endl;
-            std::cout << game_state_.getBoard().toString() << std::endl;
-            std::cout << "Move count: " << game_state_.getMoveCount()
-                      << " | Total score: " << game_state_.getTotalScore()
-                      << std::endl;
-            std::cout << "==========================" << std::endl << std::endl;
-        }
-
         // Check if we're stuck - too many rejections in a row
-        if (rejected_in_a_row >= MAX_REJECTED_BEFORE_BACKTRACK &&
+        if (rejected_in_a_row >= MAX_REJECTED_MOVES_BEFORE_BACKTRACK &&
             game_state_.getMoveCount() > 3) {
             // Undo the last accepted move to try a different path
             game_state_.undoLastMove();
@@ -81,17 +61,17 @@ int ExpensiveGameFinder::findExpensiveGame() {
             game_state_.getTileBag().returnTiles(rack_tiles);
             game_state_.getRack().clear();
             std::cout << std::endl
-                      << "Grid is stuck after " << MAX_REJECTED_BEFORE_BACKTRACK
+                      << "Grid is stuck after " << MAX_REJECTED_MOVES_BEFORE_BACKTRACK
                       << " rejections. Backtracking one move (back to "
                       << previous_needed_tiles << " needed tiles)" << std::endl;
         }
 
         // Check if any of the 3 target words can be played in a single move
         std::string playable_word =
-            findPlayableWord(main_word1, main_word2, main_word3);
+            findPlayableMainWord(main_word1, main_word2, main_word3);
         if (!playable_word.empty()) {
             // Play the target word directly!
-            if (playSpecificWord(playable_word)) {
+            if (playSpecificMainWord(playable_word)) {
                 rejected_in_a_row = 0;
                 // Reset progress tracking after placing a target word
                 previous_needed_tiles = calculateTotalNeededTiles(
@@ -227,9 +207,7 @@ ExpensiveGameFinder::findCompatible15LetterWords() {
     int pool_size = 140;
     std::vector<WordScore> top_words(scored_words.begin(),
                                      scored_words.begin() + pool_size);
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::shuffle(top_words.begin(), top_words.end(), rng);
+    std::shuffle(top_words.begin(), top_words.end(), rng_);
 
     // Try to find compatible triplets from the shuffled top words
     for (size_t i = 0; i < top_words.size(); ++i) {
@@ -237,6 +215,18 @@ ExpensiveGameFinder::findCompatible15LetterWords() {
             for (size_t k = j + 1; k < top_words.size(); ++k) {
                 if (areWordsCompatible(top_words[i].word, top_words[j].word,
                                        top_words[k].word)) {
+                    std::string main_word1 = top_words[i].word, main_word2 = top_words[j].word, main_word3 = top_words[k].word;
+                    std::cout << "Found compatible 15-letter words:" << std::endl;
+                    std::cout << "  Word 1: " << main_word1
+                            << " (score: " << score15LetterWord(main_word1) << ")"
+                            << std::endl;
+                    std::cout << "  Word 2: " << main_word2
+                            << " (score: " << score15LetterWord(main_word2) << ")"
+                            << std::endl;
+                    std::cout << "  Word 3: " << main_word3
+                            << " (score: " << score15LetterWord(main_word3) << ")"
+                            << std::endl;
+
                     return {top_words[i].word, top_words[j].word,
                             top_words[k].word};
                 }
@@ -392,8 +382,8 @@ bool ExpensiveGameFinder::canPlaceWordsOnGridWithTripleWords(
                 }
             }
 
-            // Check triple word squares: For vertical placement at (0,0),
-            // (0,7), (0,14) Only require the triple word square to be available
+            // Check triple word squares: For vertical placement at (0,0), (0,7), (0,14)
+            // Only require the triple word square to be available
             // if the word is not already placed
             bool triple_words_ok = true;
             if (!word1_already_placed &&
@@ -523,7 +513,7 @@ bool ExpensiveGameFinder::canPlaceWordsOnGridWithTripleWords(
     return false;
 }
 
-std::string ExpensiveGameFinder::findPlayableWord(const std::string& word1,
+std::string ExpensiveGameFinder::findPlayableMainWord(const std::string& word1,
                                                   const std::string& word2,
                                                   const std::string& word3) {
     std::vector<std::string> words = {word1, word2, word3};
@@ -618,7 +608,7 @@ std::string ExpensiveGameFinder::findPlayableWord(const std::string& word1,
     return "";
 }
 
-bool ExpensiveGameFinder::playSpecificWord(const std::string& word) {
+bool ExpensiveGameFinder::playSpecificMainWord(const std::string& word) {
     const Board& board = game_state_.getBoard();
 
     // Find the correct position and orientation for this word
@@ -802,4 +792,16 @@ int ExpensiveGameFinder::calculateTotalNeededTiles(const std::string& word1,
     return min_total_needed;
 }
 
+void ExpensiveGameFinder::checkKeyPressAndPrintBoard() {
+        // Check for keyboard input ('p' to print grid)
+        char key = checkKeyPress();
+        if (key == 'p' || key == 'P') {
+            std::cout << std::endl << "=== Current Grid State ===" << std::endl;
+            std::cout << game_state_.getBoard().toString() << std::endl;
+            std::cout << "Move count: " << game_state_.getMoveCount()
+                      << " | Total score: " << game_state_.getTotalScore()
+                      << std::endl;
+            std::cout << "==========================" << std::endl << std::endl;
+        }
+}
 }  // namespace scradle

@@ -96,8 +96,9 @@ void Board::display() const {
 
 string Board::toString() const {
     stringstream ss;
-
+    ss << "  123456789012345\n";
     for (int row = 0; row < SIZE; ++row) {
+        ss << char(row+'A') << " ";
         for (int col = 0; col < SIZE; ++col) {
             const Cell& cell = getCell(row, col);
 

@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <unordered_set>
+#include <random>
 
 namespace scradle {
 
@@ -102,7 +103,7 @@ private:
      * @param word3 Third word
      * @return The word that can be played, or empty string if none can be played
      */
-    std::string findPlayableWord(const std::string& word1, const std::string& word2,
+    std::string findPlayableMainWord(const std::string& word1, const std::string& word2,
                                    const std::string& word3);
 
     /**
@@ -110,7 +111,7 @@ private:
      * @param word The word to play
      * @return true if the word was successfully played
      */
-    bool playSpecificWord(const std::string& word);
+    bool playSpecificMainWord(const std::string& word);
 
     /**
      * Count how many tiles from rack are needed to place a word at a specific position
@@ -135,8 +136,11 @@ private:
     int calculateTotalNeededTiles(const std::string& word1, const std::string& word2,
                                     const std::string& word3, const Board& board);
 
+    void checkKeyPressAndPrintBoard();
+
     GameState game_state_;
     const DAWG& dawg_;
+    std::mt19937 rng_;  // Random number generator initialized with seed
 };
 
 }  // namespace scradle
