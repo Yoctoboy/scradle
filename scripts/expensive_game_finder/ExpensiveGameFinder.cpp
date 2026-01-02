@@ -18,7 +18,9 @@ ExpensiveGameFinder::ExpensiveGameFinder(const DAWG& dawg, unsigned int seed)
 
 int ExpensiveGameFinder::findExpensiveGame() {
     const int MAX_MAIN_LOOPS = 100000;                  // Prevent infinite loops
-    const int MAX_REJECTED_MOVES_BEFORE_BACKTRACK = 2000;  // Backtrack if stuck
+    const int MAX_REJECTED_MOVES_BEFORE_BACKTRACK = 600;  // Backtrack if stuck
+    const int PROGRESS_WINDOW_SIZE = 5;  // Consider last 2 moves
+    const int MIN_PROGRESS_AMOUNT_IN_WINDOW = 2;
 
     std::cout << "Starting expensive game search..." << std::endl;
     std::cout << "(Press 'p' at any time to print the current grid state)"
@@ -39,6 +41,9 @@ int ExpensiveGameFinder::findExpensiveGame() {
         45;  // Start with maximum (3 words × 15 letters)
     std::unordered_set<std::string> seen_grids;  // Track seen grid states
 
+    // Rolling window for progress tracking
+    std::vector<bool> progress_history;  // Track whether each move made progress
+
     while (!game_state_.isGameOver() && attempts < MAX_MAIN_LOOPS) {
         checkKeyPressAndPrintBoard();
         attempts++;
@@ -53,8 +58,11 @@ int ExpensiveGameFinder::findExpensiveGame() {
             previous_needed_tiles = calculateTotalNeededTiles(
                 main_word1, main_word2, main_word3, game_state_.getBoard());
 
-            // Reset rejection counter
+            // Reset rejection counter and remove last move from progress history
             rejected_in_a_row = 0;
+            if (!progress_history.empty()) {
+                progress_history.pop_back();
+            }
 
             // Clear rack to get a fresh draw
             std::string rack_tiles = game_state_.getRack().getTiles();
@@ -76,6 +84,8 @@ int ExpensiveGameFinder::findExpensiveGame() {
                 // Reset progress tracking after placing a target word
                 previous_needed_tiles = calculateTotalNeededTiles(
                     main_word1, main_word2, main_word3, game_state_.getBoard());
+                // Target word placement always counts as progress
+                progress_history.push_back(true);
                 continue;
             }
         }
@@ -114,7 +124,21 @@ int ExpensiveGameFinder::findExpensiveGame() {
         std::string current_grid = game_state_.getBoard().toString();
         bool already_seen = seen_grids.count(current_grid) > 0;
 
-        if (still_possible && (made_progress || early_move) && !already_seen) {
+        // Check rolling window: allow non-progressive moves if we made progress
+        // within the last PROGRESS_WINDOW_SIZE moves
+        int progress_in_current_window = 0;
+        if (!early_move && !made_progress) {
+            // Count how many moves made progress in the recent window
+            int window_start = std::max(0, (int)progress_history.size() - PROGRESS_WINDOW_SIZE + 1);
+            for (int i = window_start; i < (int)progress_history.size(); ++i) {
+                if (progress_history[i]) {
+                    progress_in_current_window++;
+                }
+            }
+        }
+        bool is_progress_sufficient_in_window = progress_in_current_window >= MIN_PROGRESS_AMOUNT_IN_WINDOW;
+
+        if (still_possible && (made_progress || early_move || is_progress_sufficient_in_window) && !already_seen) {
             // Good move - we made progress (or it's early) and placement is
             // still possible
             std::cout << std::endl
@@ -125,6 +149,9 @@ int ExpensiveGameFinder::findExpensiveGame() {
             rejected_in_a_row = 0;
             previous_needed_tiles = needed_after_move;
             seen_grids.insert(current_grid);
+
+            // Track whether this move made progress
+            progress_history.push_back(made_progress);
         } else {
             // Bad move - no progress made or placement became impossible or
             // grid already seen
