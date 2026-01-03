@@ -10,6 +10,7 @@
 #include "../../engine/include/scorer.h"
 #include "../../engine/include/tile_bag.h"
 #include "keyboard_input.h"
+#include "CompatibleWordFinder.h"
 
 namespace scradle {
 
@@ -26,27 +27,30 @@ int ExpensiveGameFinder::findExpensiveGame() {
     std::cout << "(Press 'p' at any time to print the current grid state)"
               << std::endl;
 
-    // Step 1: Find three mutually compatible high-scoring 15-letter words
-    auto [main_word1, main_word2, main_word3] = findCompatible15LetterWords();
-    if (main_word1.empty() || main_word2.empty() || main_word3.empty()) {
+    // Step 1: Find three mutually compatible high-scoring 15-letter words and their substrings
+    CompatibleWordFinder word_finder(dawg_, rng_());
+    CompatibleWordFinder::Result word_result = word_finder.findCompatible15LetterWordsWithSubstrings();
+
+    if (!word_result.found) {
         std::cerr << "Could not find compatible 15-letter words" << std::endl;
         return 0;
     }
 
-    // Pre-calculate all valid substrings for the main words (they never change)
-    std::cout << "Pre-calculating valid substrings..." << std::endl;
-    std::vector<SubstringInfo> substrings1 = findValidSubstrings(main_word1);
-    std::vector<SubstringInfo> substrings2 = findValidSubstrings(main_word2);
-    std::vector<SubstringInfo> substrings3 = findValidSubstrings(main_word3);
+    std::string main_word1 = word_result.word1;
+    std::string main_word2 = word_result.word2;
+    std::string main_word3 = word_result.word3;
+    std::vector<CompatibleWordFinder::SubstringInfo> substrings1 = word_result.substrings1;
+    std::vector<CompatibleWordFinder::SubstringInfo> substrings2 = word_result.substrings2;
+    std::vector<CompatibleWordFinder::SubstringInfo> substrings3 = word_result.substrings3;
 
-    std::vector<SubstringInfo> all_substrings;
+    std::vector<CompatibleWordFinder::SubstringInfo> all_substrings;
     all_substrings.insert(all_substrings.end(), substrings1.begin(), substrings1.end());
     all_substrings.insert(all_substrings.end(), substrings2.begin(), substrings2.end());
     all_substrings.insert(all_substrings.end(), substrings3.begin(), substrings3.end());
 
     // Sort by length (descending) - try longer substrings first
     std::sort(all_substrings.begin(), all_substrings.end(),
-              [](const SubstringInfo& a, const SubstringInfo& b) {
+              [](const CompatibleWordFinder::SubstringInfo& a, const CompatibleWordFinder::SubstringInfo& b) {
                   return a.substring.length() > b.substring.length();
               });
 
@@ -234,128 +238,6 @@ int ExpensiveGameFinder::findExpensiveGame() {
     game_state_.printSummary();
 
     return game_state_.getTotalScore();
-}
-
-std::tuple<std::string, std::string, std::string>
-ExpensiveGameFinder::findCompatible15LetterWords() {
-    // Load all 15-letter words
-    std::vector<std::string> words = load15LetterWords();
-
-    if (words.empty()) {
-        return {"", "", ""};
-    }
-
-    std::cout << "Loaded " << words.size() << " 15-letter words" << std::endl;
-
-    // Score all words
-    struct WordScore {
-        std::string word;
-        int score;
-    };
-
-    std::vector<WordScore> scored_words;
-    scored_words.reserve(words.size());
-
-    for (const auto& word : words) {
-        int score = score15LetterWord(word);
-        scored_words.push_back({word, score});
-    }
-
-    // Sort by score (descending)
-    std::sort(scored_words.begin(), scored_words.end(),
-              [](const WordScore& a, const WordScore& b) {
-                  return a.score > b.score;
-              });
-
-    // Add randomness: shuffle the top words to get different triplets each time
-    int pool_size = 140;
-    std::vector<WordScore> top_words(scored_words.begin(),
-                                     scored_words.begin() + pool_size);
-    std::shuffle(top_words.begin(), top_words.end(), rng_);
-
-    // Try to find compatible triplets from the shuffled top words
-    for (size_t i = 0; i < top_words.size(); ++i) {
-        for (size_t j = i + 1; j < top_words.size(); ++j) {
-            for (size_t k = j + 1; k < top_words.size(); ++k) {
-                if (areWordsCompatible(top_words[i].word, top_words[j].word,
-                                       top_words[k].word)) {
-                    std::string main_word1 = top_words[i].word, main_word2 = top_words[j].word, main_word3 = top_words[k].word;
-                    std::cout << "Found compatible 15-letter words:" << std::endl;
-                    std::cout << "  Word 1: " << main_word1
-                            << " (score: " << score15LetterWord(main_word1) << ")"
-                            << std::endl;
-                    std::cout << "  Word 2: " << main_word2
-                            << " (score: " << score15LetterWord(main_word2) << ")"
-                            << std::endl;
-                    std::cout << "  Word 3: " << main_word3
-                            << " (score: " << score15LetterWord(main_word3) << ")"
-                            << std::endl;
-
-                    return {top_words[i].word, top_words[j].word,
-                            top_words[k].word};
-                }
-            }
-        }
-    }
-
-    return {"", "", ""};
-}
-
-bool ExpensiveGameFinder::areWordsCompatible(const std::string& word1,
-                                             const std::string& word2,
-                                             const std::string& word3) {
-    // Three 15-letter words are compatible if we have enough tiles in a full
-    // French Scrabble bag to form all three words without using jokers
-
-    // Create a fresh tile bag to check if we can draw all three words
-    TileBag temp_bag(0);  // Seed doesn't matter for this check
-
-    // Combine all three words into a single string of required letters
-    std::string combined_letters = word1 + word2 + word3;
-
-    // Check if the bag can provide all these letters without using jokers
-    return temp_bag.canDrawTilesWithoutJoker(combined_letters);
-}
-
-std::vector<std::string> ExpensiveGameFinder::load15LetterWords() {
-    std::vector<std::string> words;
-
-    std::ifstream file("engine/dictionnaries/ods8_complete.txt");
-    if (!file.is_open()) {
-        std::cerr << "Error: Could not open dictionary file" << std::endl;
-        return words;
-    }
-
-    std::string line;
-    while (std::getline(file, line)) {
-        // Remove any trailing whitespace
-        line.erase(line.find_last_not_of(" \n\r\t") + 1);
-
-        // Only keep 15-letter words
-        if (line.length() == 15) {
-            words.push_back(line);
-        }
-    }
-    file.close();
-
-    return words;
-}
-
-int ExpensiveGameFinder::score15LetterWord(const std::string& word) {
-    // Create a board and scorer
-    Board board;
-    Scorer scorer;
-
-    // Create a move: place word horizontally starting at (0, 0)
-    Move move(0, 0, Direction::HORIZONTAL, word);
-
-    // Add tile placements for all 15 letters
-    for (int i = 0; i < 15; i++) {
-        move.addPlacement(TilePlacement(0, i, word[i], true, false));
-    }
-
-    // Score the move
-    return scorer.scoreMove(board, move);
 }
 
 RawMove ExpensiveGameFinder::createRawMoveForWord(const std::string& word,
@@ -908,30 +790,6 @@ void ExpensiveGameFinder::checkKeyPressAndPrintBoard() {
         }
 }
 
-std::vector<ExpensiveGameFinder::SubstringInfo> ExpensiveGameFinder::findValidSubstrings(const std::string& word) {
-    std::vector<SubstringInfo> valid_substrings;
-
-    // Try all contiguous substrings of the word
-    for (size_t start = 0; start < word.length(); ++start) {
-        for (size_t length = 2; length <= std::min(word.length() - start, word.length() - 1); ++length) {
-            std::string substring = word.substr(start, length);
-
-            // Check if this substring is a valid word in the dictionary
-            if (dawg_.contains(substring)) {
-                valid_substrings.emplace_back(substring, start);
-            }
-        }
-    }
-
-    // Sort by length in descending order (longest substrings first)
-    std::sort(valid_substrings.begin(), valid_substrings.end(),
-              [](const SubstringInfo& a, const SubstringInfo& b) {
-                  return a.substring.length() > b.substring.length();
-              });
-
-    return valid_substrings;
-}
-
 bool ExpensiveGameFinder::tryPlaceSubstring(const std::string& substring,
                                            const WordPlacementInfo& word_info) {
     bool DEBUG = false;
@@ -1065,9 +923,9 @@ bool ExpensiveGameFinder::tryPlaceSubstring(const std::string& substring,
     return true;
 }
 
-bool ExpensiveGameFinder::tryPlaceAnySubstring(const std::vector<SubstringInfo>& substrings1,
-                                              const std::vector<SubstringInfo>& substrings2,
-                                              const std::vector<SubstringInfo>& substrings3,
+bool ExpensiveGameFinder::tryPlaceAnySubstring(const std::vector<CompatibleWordFinder::SubstringInfo>& substrings1,
+                                              const std::vector<CompatibleWordFinder::SubstringInfo>& substrings2,
+                                              const std::vector<CompatibleWordFinder::SubstringInfo>& substrings3,
                                               const std::string& main_word1,
                                               const std::string& main_word2,
                                               const std::string& main_word3) {

@@ -5,6 +5,7 @@
 #include "../../engine/include/move_generator.h"
 #include "../../engine/include/dawg.h"
 #include "../../engine/include/move.h"
+#include "CompatibleWordFinder.h"
 #include <vector>
 #include <string>
 #include <unordered_set>
@@ -46,17 +47,6 @@ public:
     };
 
     /**
-     * SubstringInfo holds information about a valid substring of a main word
-     */
-    struct SubstringInfo {
-        std::string substring;      // The substring itself
-        int start_position;         // Position in the main word where it starts (0-indexed)
-
-        SubstringInfo(const std::string& sub, int pos)
-            : substring(sub), start_position(pos) {}
-    };
-
-    /**
      * Constructor
      * @param dawg Reference to the dictionary DAWG for word validation
      * @param seed Random seed for reproducibility
@@ -80,34 +70,6 @@ public:
     const DAWG& getDAWG() const { return dawg_; }
 
 private:
-    /**
-     * Find three mutually compatible high-scoring 15-letter words
-     * These words should be placeable simultaneously on the grid
-     * @return A tuple of 3 15-letter words that are compatible
-     */
-    std::tuple<std::string, std::string, std::string> findCompatible15LetterWords();
-
-    /**
-     * Check if three 15-letter words can be placed simultaneously on the board
-     * @param word1 First 15-letter word
-     * @param word2 Second 15-letter word
-     * @param word3 Third 15-letter word
-     * @return true if they can be placed without conflict
-     */
-    bool areWordsCompatible(const std::string& word1, const std::string& word2, const std::string& word3);
-
-    /**
-     * Load all 15-letter words from the dictionary
-     * @return Vector of all valid 15-letter words
-     */
-    std::vector<std::string> load15LetterWords();
-
-    /**
-     * Score a 15-letter word placed horizontally on the first row
-     * @param word The word to score
-     * @return The score of the word
-     */
-    int score15LetterWord(const std::string& word);
 
     /**
      * Check if three words can be placed on the grid in specific positions
@@ -177,13 +139,6 @@ private:
     void checkKeyPressAndPrintBoard();
 
     /**
-     * Find all valid substrings of a word that exist in the dictionary
-     * @param word The main word to extract substrings from
-     * @return Vector of SubstringInfo containing valid substrings and their positions
-     */
-    std::vector<SubstringInfo> findValidSubstrings(const std::string& word);
-
-    /**
      * Try to place a substring by finding the best move that matches it
      * @param substring The substring to place
      * @param word_info Placement info for the main word containing this substring
@@ -202,9 +157,9 @@ private:
      * @param main_word3 Third main word
      * @return true if a substring was successfully placed
      */
-    bool tryPlaceAnySubstring(const std::vector<SubstringInfo>& substrings1,
-                             const std::vector<SubstringInfo>& substrings2,
-                             const std::vector<SubstringInfo>& substrings3,
+    bool tryPlaceAnySubstring(const std::vector<CompatibleWordFinder::SubstringInfo>& substrings1,
+                             const std::vector<CompatibleWordFinder::SubstringInfo>& substrings2,
+                             const std::vector<CompatibleWordFinder::SubstringInfo>& substrings3,
                              const std::string& main_word1,
                              const std::string& main_word2,
                              const std::string& main_word3);

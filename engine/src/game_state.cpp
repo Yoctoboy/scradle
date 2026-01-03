@@ -147,6 +147,9 @@ bool GameState::isGameOver() const {
     int total_consonants = tile_bag_.consonantCount() + rack_consonants;
 
     // Game over if we have no vowels OR no consonants remaining
+    if (total_vowels == 0 || total_consonants == 0) {
+        std::cout << "GAME OVER:" << total_consonants << " " << total_vowels << std::endl;
+    }
     return total_vowels == 0 || total_consonants == 0;
 }
 

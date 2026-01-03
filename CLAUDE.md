@@ -4,8 +4,9 @@ A scrabble like application
 
 ## Best practices
 
-Don't forget to test your own code
-Add a command in Makefile whenever it is relevant
+- Don't forget to test your own code
+- Add a command in Makefile whenever it is relevant
+- Do not run `make expensive-game` yourself as the script may run for a while. I'll check compilation failures and test the program's output myself
 
 ## Engine
 
