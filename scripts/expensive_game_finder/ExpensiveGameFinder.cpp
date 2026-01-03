@@ -126,6 +126,8 @@ int ExpensiveGameFinder::findExpensiveGame() {
                         << " - Total: " << game_state_.getTotalScore()
                         << " | Needed tiles: " << previous_needed_tiles << std::endl;
                 continue;
+            } else {
+                // std::cout << "Could not find any substring:" << game_state_.getTileBag().toString() << std::endl;
             }
         }
 
@@ -146,6 +148,13 @@ int ExpensiveGameFinder::findExpensiveGame() {
         // Scrabble)
         Move best_move = best_moves[0];
         game_state_.applyMove(best_move);
+
+        // Return unused tiles from rack back to the bag
+        std::string remaining_tiles = game_state_.getRack().getTiles();
+        if (!remaining_tiles.empty()) {
+            game_state_.getTileBag().returnTiles(remaining_tiles);
+            game_state_.getRack().clear();
+        }
 
         // Calculate needed tiles after the move
         int needed_after_move = calculateTotalNeededTiles(
@@ -185,7 +194,7 @@ int ExpensiveGameFinder::findExpensiveGame() {
                       << "Move " << game_state_.getMoveCount() << ": "
                       << best_move.toString()
                       << " - Total: " << game_state_.getTotalScore()
-                      << " | Needed tiles: " << needed_after_move << std::endl;
+                      << " | Needed tiles: " << needed_after_move << " (" << game_state_.getTileBag().toString() << ")" << std::endl;
             rejected_in_a_row = 0;
             previous_needed_tiles = needed_after_move;
             seen_grids.insert(current_grid);
@@ -701,6 +710,13 @@ bool ExpensiveGameFinder::playSpecificMainWord(const std::string& word) {
     // Apply the move
     game_state_.applyMove(move);
 
+    // Return unused tiles from rack back to the bag (if any)
+    std::string remaining_tiles = game_state_.getRack().getTiles();
+    if (!remaining_tiles.empty()) {
+        game_state_.getTileBag().returnTiles(remaining_tiles);
+        game_state_.getRack().clear();
+    }
+
     std::cout << "\n\n*** PLAYED TARGET WORD: " << word << " (" << score
               << " pts) ***" << std::endl
               << std::endl;
@@ -901,6 +917,13 @@ bool ExpensiveGameFinder::tryPlaceSubstring(const std::string& substring,
             move.getDirection() == word_info.direction) {
             // Found it! Apply this move
             game_state_.applyMove(move);
+
+            // Return unused tiles from rack back to the bag
+            std::string remaining_tiles = game_state_.getRack().getTiles();
+            if (!remaining_tiles.empty()) {
+                game_state_.getTileBag().returnTiles(remaining_tiles);
+                game_state_.getRack().clear();
+            }
 
             std::cout << "\n*** PLACED SUBSTRING: " << substring
                       << " (from " << word_info.word << ") - "
