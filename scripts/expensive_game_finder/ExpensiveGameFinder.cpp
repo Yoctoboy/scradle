@@ -718,9 +718,7 @@ bool ExpensiveGameFinder::playSpecificMainWord(const std::string& word) {
     }
 
     std::cout << "\n\n*** PLAYED TARGET WORD: " << word << " (" << score
-              << " pts) ***" << std::endl
-              << std::endl;
-    std::cout << "Total score: " << game_state_.getTotalScore() << std::endl;
+              << " pts) ***" << " - Total score: " << game_state_.getTotalScore() << std::endl;
 
     return true;
 }
@@ -877,73 +875,80 @@ bool ExpensiveGameFinder::tryPlaceSubstring(const std::string& substring,
         return false;
     }
 
-    if(DEBUG) std::cout << "[DEBUG] -> Tiles available! Building rack and generating moves..." << std::endl;
+    if(DEBUG) std::cout << "[DEBUG] -> Tiles available! Trying multiple racks..." << std::endl;
 
-    // Build a 7-tile rack: needed tiles + random tiles to fill up to 7
-    game_state_.getRack().clear();
+    // Try multiple different racks to find one where the substring is the best move
+    const int MAX_RACK_ATTEMPTS = 20;
 
-    // First, draw the needed tiles
-    for (char c : needed_tiles) {
-        char drawn = game_state_.getTileBag().drawTile(c);
-        game_state_.getRack().addTile(drawn);
-    }
+    for (int attempt = 0; attempt < MAX_RACK_ATTEMPTS; ++attempt) {
+        // Build a 7-tile rack: needed tiles + random tiles to fill up to 7
+        game_state_.getRack().clear();
 
-    // Fill the rest with random tiles (up to 7 total)
-    int tiles_to_add = 7 - needed_tiles.length();
-    for (int i = 0; i < tiles_to_add; ++i) {
-        if (game_state_.getTileBag().remainingCount() > 0) {
-            char random_tile = game_state_.getTileBag().drawTile();
-            game_state_.getRack().addTile(random_tile);
-        }
-    }
-
-    // Generate all possible moves with this rack
-    MoveGenerator move_gen(board, game_state_.getRack(), dawg_);
-    std::vector<Move> best_moves = move_gen.getBestMove();
-
-    if(DEBUG) std::cout << "[DEBUG] -> Generated " << best_moves.size() << " best moves" << std::endl;
-
-    // Check if any of the best moves is exactly our substring at the right position
-    bool found = false;
-    for (const auto& move : best_moves) {
-        if(DEBUG) {
-            std::cout << "[DEBUG]   - Move: " << move.toString()
-                  << " at (" << move.getStartRow() << "," << move.getStartCol() << ")" << std::endl;
+        // First, draw the needed tiles
+        for (char c : needed_tiles) {
+            char drawn = game_state_.getTileBag().drawTile(c);
+            game_state_.getRack().addTile(drawn);
         }
 
-        if (move.getWord() == substring &&
-            move.getStartRow() == substring_row &&
-            move.getStartCol() == substring_col &&
-            move.getDirection() == word_info.direction) {
-            // Found it! Apply this move
-            game_state_.applyMove(move);
+        // Fill the rest with random tiles (up to 7 total)
+        int tiles_to_add = 7 - needed_tiles.length();
+        for (int i = 0; i < tiles_to_add; ++i) {
+            if (game_state_.getTileBag().remainingCount() > 0) {
+                char random_tile = game_state_.getTileBag().drawTile();
+                game_state_.getRack().addTile(random_tile);
+            }
+        }
 
-            // Return unused tiles from rack back to the bag
-            std::string remaining_tiles = game_state_.getRack().getTiles();
-            if (!remaining_tiles.empty()) {
-                game_state_.getTileBag().returnTiles(remaining_tiles);
-                game_state_.getRack().clear();
+        // Generate all possible moves with this rack
+        MoveGenerator move_gen(board, game_state_.getRack(), dawg_);
+        std::vector<Move> best_moves = move_gen.getBestMove();
+
+        if(DEBUG) std::cout << "[DEBUG] -> Attempt " << (attempt + 1) << ": Generated " << best_moves.size() << " best moves" << std::endl;
+
+        // Check if any of the best moves is exactly our substring at the right position
+        bool found = false;
+        for (const auto& move : best_moves) {
+            if(DEBUG) {
+                std::cout << "[DEBUG]   - Move: " << move.toString()
+                      << " at (" << move.getStartRow() << "," << move.getStartCol() << ")" << std::endl;
             }
 
-            std::cout << "\n*** PLACED SUBSTRING: " << substring
-                      << " (from " << word_info.word << ") - "
-                      << move.getScore() << " pts ***" << std::endl;
+            if (move.getWord() == substring &&
+                move.getStartRow() == substring_row &&
+                move.getStartCol() == substring_col &&
+                move.getDirection() == word_info.direction) {
+                // Found it! Apply this move
+                game_state_.applyMove(move);
 
-            found = true;
-            break;
+                // Return unused tiles from rack back to the bag
+                std::string remaining_tiles = game_state_.getRack().getTiles();
+                if (!remaining_tiles.empty()) {
+                    game_state_.getTileBag().returnTiles(remaining_tiles);
+                    game_state_.getRack().clear();
+                }
+
+                std::cout << "\n*** PLACED SUBSTRING: " << substring
+                          << " (from " << word_info.word << ") - "
+                          << move.getScore() << " pts ***" << std::endl;
+
+                found = true;
+                break;
+            }
         }
-    }
 
-    if (!found) {
-        if(DEBUG) std::cout << "[DEBUG] -> No matching move found" << std::endl;
-        // If we didn't find the exact move, return the tiles to the bag
+        if (found) {
+            return true;
+        }
+
+        // This rack didn't work - return tiles to bag and try again
         std::string rack_tiles = game_state_.getRack().getTiles();
         game_state_.getTileBag().returnTiles(rack_tiles);
         game_state_.getRack().clear();
-        return false;
     }
 
-    return true;
+    // Tried all attempts, didn't find a matching move
+    if(DEBUG) std::cout << "[DEBUG] -> No matching move found after " << MAX_RACK_ATTEMPTS << " attempts" << std::endl;
+    return false;
 }
 
 bool ExpensiveGameFinder::tryPlaceAnySubstring(const std::vector<CompatibleWordFinder::SubstringInfo>& substrings1,
