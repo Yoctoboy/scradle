@@ -1,0 +1,40 @@
+=== Game #3468 ===
+Total Score: 1616
+Move Count: 15
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....E.DEPAVAGE
+B .ELONGEAT..O..M
+C .....A.....MU.B
+D .....L.....IN.A
+E .R..JE....ET..R
+F .A..OR....XI..D
+G .T..DA....IF..A
+H MU.WHISKEYS...I
+I OR..P..U..T....
+J NE..U..F..E....
+K OR..R..I..Z....
+L BALISTIQUE.....
+M L....ELUSSENT..
+N O......E.......
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAI at 15A [89 pts] [BINGO]
+Move 10: BALiSTIQUE at L1 [86 pts] [BINGO]
+Move 11: EGALERAI at 6A [81 pts] [BINGO]
+Move 12: ELUSSENT at M6 [80 pts] [BINGO]
+Move 13: RATURERA at 2E [73 pts] [BINGO]
+Move 14: ELoNGEAT at B2 [71 pts] [BINGO]
+Move 15: UN at 13C [12 pts]

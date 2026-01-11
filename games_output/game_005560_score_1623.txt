@@ -1,0 +1,40 @@
+=== Game #5560 ===
+Total Score: 1623
+Move Count: 15
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....E.DEPAVAGE
+B .....G.....O..M
+C .....A.....M..B
+D .....R.....I..A
+E .A..JE....ET..R
+F .L..OR....XI..D
+G .T..DA..NAIF..A
+H ME.WHISKEYS..AS
+I OR..P..U..T..N.
+J NE..U..F..E..N.
+K OR..R..I..Z..U.
+L BALISTIQUE...L.
+M L.....LUTTEUSE.
+N O......E.....E.
+O COCHEVIS.....S.
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAS at 15A [89 pts] [BINGO]
+Move 10: BALISTIQUE at L1 [88 pts] [BINGO]
+Move 11: EGARERAI at 6A [81 pts] [BINGO]
+Move 12: LUTTEUSE at M7 [78 pts] [BINGO]
+Move 13: ALTERERA at 2E [73 pts] [BINGO]
+Move 14: ANNULEEs at 14H [70 pts] [BINGO]
+Move 15: NaIF at G9 [20 pts]

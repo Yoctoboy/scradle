@@ -1,0 +1,40 @@
+=== Game #4293 ===
+Total Score: 1623
+Move Count: 15
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....E.DEPAVAGE
+B .GNANGNAN..O..M
+C .....A.....M..B
+D .....L.....I..A
+E ....JE....ET..R
+F ....OR....XI..D
+G ....DA....IF.TA
+H M..WHISKEYS..ES
+I O...P..U.ET..R.
+J N...U..F.TE..R.
+K O...R..I..Z..E.
+L BALISTIQUE...U.
+M L.....LUNULEES.
+N O......E.....E.
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAS at 15A [89 pts] [BINGO]
+Move 10: BALISTIQUE at L1 [88 pts] [BINGO]
+Move 11: EGALERAI at 6A [81 pts] [BINGO]
+Move 12: LUNULEES at M7 [78 pts] [BINGO]
+Move 13: TERREUSE at 14G [74 pts] [BINGO]
+Move 14: gNANGNAN at B2 [71 pts] [BINGO]
+Move 15: YeT at 10H [18 pts]

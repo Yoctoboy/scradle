@@ -1,0 +1,41 @@
+=== Game #5893 ===
+Total Score: 1638
+Move Count: 16
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....E.DEPAVAGE
+B .ALLEGUAT..O..M
+C .....A.....MU.B
+D .....R.....IN.A
+E .E..JE....ET..R
+F .N..OR....XI..D
+G .R..DA..NAIF..A
+H ME.WHISKEYS...T
+I ON..P..U..T....
+J NE..U..F..E....
+K OR..R..I..Z....
+L BALISTIQUE.....
+M L....ELUSSENT..
+N O......E.......
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAT at 15A [89 pts] [BINGO]
+Move 10: BALISTIQUE at L1 [88 pts] [BINGO]
+Move 11: EGARERAI at 6A [81 pts] [BINGO]
+Move 12: ELUSSENT at M6 [80 pts] [BINGO]
+Move 13: ENRENERA at 2E [73 pts] [BINGO]
+Move 14: ALLeGUAT at B2 [71 pts] [BINGO]
+Move 15: NaIF at G9 [20 pts]
+Move 16: UN at 13C [12 pts]

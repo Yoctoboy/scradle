@@ -1,0 +1,40 @@
+=== Game #3540 ===
+Total Score: 1624
+Move Count: 15
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A ..S..E.DEPAVAGE
+B ..U..G.....O..M
+C ..L..A.....M..B
+D ..T..L.....I..A
+E .RA.JE....ET..R
+F .AN.OR....XI..D
+G .TE.DA....IF..A
+H MU.WHISKEYS...I
+I OR..P..U.ET....
+J NE..U..F.NE....
+K OR..R..I..Z....
+L BALISTIQUE.....
+M L....ELUSSENT..
+N O......E.......
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAI at 15A [89 pts] [BINGO]
+Move 10: BALiSTIQUE at L1 [86 pts] [BINGO]
+Move 11: EGALERAI at 6A [81 pts] [BINGO]
+Move 12: ELUSSENT at M6 [80 pts] [BINGO]
+Move 13: RATURERA at 2E [73 pts] [BINGO]
+Move 14: sULTANE at 3A [71 pts] [BINGO]
+Move 15: YEN at 10H [20 pts]

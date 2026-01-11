@@ -1,0 +1,40 @@
+=== Game #4443 ===
+Total Score: 1626
+Move Count: 15
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....E.DEPAVAGE
+B .....G.....O..M
+C .....A.....M..B
+D .....L.....I..A
+E ....JE....ET..R
+F .L..OR....XI..D
+G .O..DA....IF.TA
+H MU.WHISKEYS..AS
+I OR..P..U.ET..N.
+J NE..U..F.NE..N.
+K OR..R..I..Z..E.
+L BALISTIQUE...U.
+M LI....LUTTERAS.
+N O......E.....E.
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAS at 15A [89 pts] [BINGO]
+Move 10: BALISTIQUE at L1 [88 pts] [BINGO]
+Move 11: EGALERAI at 6A [81 pts] [BINGO]
+Move 12: LUTTERAS at M7 [78 pts] [BINGO]
+Move 13: TANNEUSE at 14G [74 pts] [BINGO]
+Move 14: LoURERAi at 2F [72 pts] [BINGO]
+Move 15: YEN at 10H [20 pts]

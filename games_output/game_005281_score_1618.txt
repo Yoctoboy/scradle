@@ -1,0 +1,40 @@
+=== Game #5281 ===
+Total Score: 1618
+Move Count: 15
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....E.DEPAVAGE
+B .....G..NU.O..M
+C .....A.....M..B
+D .....R.....I..A
+E ....JE....ET..R
+F .A..OR....XI..D
+G .M..DA....IF.LA
+H ME.WHISKEYS..US
+I ON..P..U..T..N.
+J NE..U..F..E..E.
+K OR..R..I..Z..T.
+L BALISTIQUE...T.
+M LI....LUSTRALE.
+N O......E.....E.
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAS at 15A [89 pts] [BINGO]
+Move 10: BALISTIQUE at L1 [88 pts] [BINGO]
+Move 11: EGARERAI at 6A [81 pts] [BINGO]
+Move 12: LUSTRALE at M7 [78 pts] [BINGO]
+Move 13: LUNETTEE at 14G [74 pts] [BINGO]
+Move 14: AmENERAi at 2F [72 pts] [BINGO]
+Move 15: NU at B9 [12 pts]

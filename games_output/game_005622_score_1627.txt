@@ -1,0 +1,40 @@
+=== Game #5622 ===
+Total Score: 1627
+Move Count: 15
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....A.DEPAVAGE
+B .ALLEGUAT..O..M
+C .....R.....M..B
+D .....E.....I..A
+E .E..JE....ET..R
+F .N..OR....XI..D
+G .D..DA..NAIF..A
+H MU.WHISKEYS...T
+I OR..P..U..T....
+J NE..U..F..E....
+K OR..R..I..Z....
+L BALISTIQUE.....
+M L....ELUSSENT..
+N O......E.......
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAT at 15A [89 pts] [BINGO]
+Move 10: BALISTIQUE at L1 [88 pts] [BINGO]
+Move 11: AGREERAI at 6A [81 pts] [BINGO]
+Move 12: ELUSSENT at M6 [80 pts] [BINGO]
+Move 13: ALLEGUAT at B2 [73 pts] [BINGO]
+Move 14: ENdURERA at 2E [72 pts] [BINGO]
+Move 15: NaIF at G9 [20 pts]

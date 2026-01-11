@@ -1,0 +1,41 @@
+=== Game #5411 ===
+Total Score: 1634
+Move Count: 16
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....E.DEPAVAGE
+B .L...G.....O..M
+C .U...A.....M..B
+D .N...R.....I..A
+E .E..JET...ET..R
+F .T..OR....XI..D
+G .T..DA..NAIF.NA
+H ME.WHISKEYS..AS
+I O...P..U..T..N.
+J N...U..F..E..A.
+K O...R..I..Z..N.
+L BALISTIQUE...E.
+M L.....LUSTREUR.
+N O......E.....E.
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAS at 15A [89 pts] [BINGO]
+Move 10: BALISTIQUE at L1 [88 pts] [BINGO]
+Move 11: EGARERAI at 6A [81 pts] [BINGO]
+Move 12: LUSTREUR at M7 [78 pts] [BINGO]
+Move 13: NANANERE at 14G [74 pts] [BINGO]
+Move 14: LUNETTE at 2B [71 pts] [BINGO]
+Move 15: NaIF at G9 [20 pts]
+Move 16: JEt at E5 [9 pts]

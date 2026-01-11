@@ -1,0 +1,41 @@
+=== Game #2417 ===
+Total Score: 1631
+Move Count: 16
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....S.DEPAVAGE
+B .E...U.....O..L
+C .T...R.....M..I
+D .E...S.....I..G
+E .N..JETA..ET..I
+F .D..OM....XI..B
+G .R..DA..NAIF..L
+H ME.WHISKEYS.A.E
+I O...P..U..T.N..
+J N...U..F..E.N..
+K O...R..I..Z.U..
+L BALISTIQUE..L..
+M L......U....E..
+N O.....RENTRERA.
+O COCHEVIS....A..
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: ELIGIBLE at 15A [89 pts] [BINGO]
+Move 10: BALiSTiQUE at L1 [84 pts] [BINGO]
+Move 11: SURSEMAI at 6A [84 pts] [BINGO]
+Move 12: ETENDRE at 2B [77 pts] [BINGO]
+Move 13: RENTRERA at N7 [72 pts] [BINGO]
+Move 14: ANNULERA at 13H [68 pts] [BINGO]
+Move 15: NAIF at G9 [22 pts]
+Move 16: JETA at E5 [11 pts]

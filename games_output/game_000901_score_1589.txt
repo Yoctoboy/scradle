@@ -1,0 +1,41 @@
+=== Game #901 ===
+Total Score: 1589
+Move Count: 16
+Bingo Count: 13
+
+Final Board:
+  123456789012345
+A ARA..S.DEPAVAGE
+B .E...U.....O..L
+C .T...R.....M..I
+D .E...SA....I..G
+E .N..JEU...ET..I
+F .D..OM....XI..B
+G .R..DA....IF..L
+H ME.WHISKEYS...E
+I O...P..U..T....
+J N...U..F..E....
+K O...R..I..Z...N
+L BALISTIQUE....A
+M L......U......N
+N O.....RETENTERA
+O COCHEVIS......N
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: ELIGIBLE at 15A [89 pts] [BINGO]
+Move 10: SURSEMAI at 6A [84 pts] [BINGO]
+Move 11: BALiSTiQUE at L1 [84 pts] [BINGO]
+Move 12: ETENDRE at 2B [77 pts] [BINGO]
+Move 13: RETENTER at N7 [72 pts] [BINGO]
+Move 14: NANAN at 15K [27 pts]
+Move 15: ARA at A1 [18 pts]
+Move 16: AU at 7D [14 pts]

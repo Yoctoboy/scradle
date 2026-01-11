@@ -29,8 +29,9 @@ TEST_DUPLICATE_GAME_TARGET = $(BIN_DIR)/test_duplicate_game
 SIMULATE_GAMES_TARGET = $(BIN_DIR)/simulate_games
 SINGLE_GAME_TARGET = $(BIN_DIR)/single_game
 EXPENSIVE_GAME_FINDER_TARGET = $(BIN_DIR)/expensive_game_finder
+TOP_EVERYTIME_FINDER_TARGET = $(BIN_DIR)/top_everytime_finder
 
-.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-tile-bag test-game-state test-duplicate-game test-all simulate single-game expensive-game dirs
+.PHONY: all clean test test-board test-dawg test-movegen test-scorer test-blanks test-integration test-complex test-tile-bag test-game-state test-duplicate-game test-all simulate single-game expensive-game top-everytime dirs
 
 all: dirs $(OBJECTS)
 
@@ -111,6 +112,9 @@ $(SINGLE_GAME_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/single
 $(EXPENSIVE_GAME_FINDER_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/expensive_game_finder/main.cpp scripts/expensive_game_finder/ExpensiveGameFinder.cpp scripts/expensive_game_finder/CompatibleWordFinder.cpp scripts/expensive_game_finder/keyboard_input.cpp
 	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/expensive_game_finder/main.cpp scripts/expensive_game_finder/ExpensiveGameFinder.cpp scripts/expensive_game_finder/CompatibleWordFinder.cpp scripts/expensive_game_finder/keyboard_input.cpp -o $@
 
+$(TOP_EVERYTIME_FINDER_TARGET): $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/top_everytime_finder/main.cpp scripts/top_everytime_finder/TopEverytimeFinder.cpp
+	$(CXX) $(CXXFLAGS) $(filter-out $(OBJ_DIR)/main.o,$(OBJECTS)) scripts/top_everytime_finder/main.cpp scripts/top_everytime_finder/TopEverytimeFinder.cpp -o $@
+
 simulate: dirs $(SIMULATE_GAMES_TARGET)
 	./$(SIMULATE_GAMES_TARGET) $(ARGS)
 
@@ -119,6 +123,9 @@ single-game: dirs $(SINGLE_GAME_TARGET)
 
 expensive-game: dirs $(EXPENSIVE_GAME_FINDER_TARGET)
 	./$(EXPENSIVE_GAME_FINDER_TARGET) $(ARGS)
+
+top-everytime: dirs $(TOP_EVERYTIME_FINDER_TARGET)
+	./$(TOP_EVERYTIME_FINDER_TARGET) $(ARGS)
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
@@ -142,5 +149,6 @@ help:
 	@echo "  make simulate ARGS=\"<num_games> <num_threads>\" - Simulate multiple games"
 	@echo "  make single-game ARGS=\"<seed>\" - Debug a single game with specific seed"
 	@echo "  make expensive-game ARGS=\"<seed>\" - Find expensive (high-scoring) games"
+	@echo "  make top-everytime ARGS=\"<output_dir>\" - Find most expensive game with DFS (always play best move)"
 	@echo "  make clean           - Remove build artifacts"
 	@echo "  make help            - Show this help message"

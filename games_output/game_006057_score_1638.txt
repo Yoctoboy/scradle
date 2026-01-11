@@ -1,0 +1,41 @@
+=== Game #6057 ===
+Total Score: 1638
+Move Count: 16
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A ..T..E.DEPAVAGE
+B ..A..G..NU.O..M
+C ..R..A.....M..B
+D ..T..L.....I..A
+E ..A.JE....ET..R
+F .AN.OR....XI..D
+G .LE.DA..NAIF..E
+H MU.WHISKEYS...R
+I ON..P..U..T....
+J NE..U..F..E....
+K OR..R..I..Z....
+L BALISTIQUE.....
+M LI...ELUSSENT..
+N O......E.......
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDER at 15A [89 pts] [BINGO]
+Move 10: BALISTIQUE at L1 [88 pts] [BINGO]
+Move 11: EGALERAI at 6A [81 pts] [BINGO]
+Move 12: ELUSSENT at M6 [80 pts] [BINGO]
+Move 13: ALUNERAi at 2F [73 pts] [BINGO]
+Move 14: TARTANE at 3A [71 pts] [BINGO]
+Move 15: NaIF at G9 [20 pts]
+Move 16: NU at B9 [12 pts]

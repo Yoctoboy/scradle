@@ -1,0 +1,41 @@
+=== Game #4381 ===
+Total Score: 1635
+Move Count: 16
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A .....E.DEPAVAGE
+B .A...G..NU.O..M
+C .N...A.....M..B
+D .O...L.....I..A
+E .N..JE....ET..R
+F .N..OR....XI..D
+G .E..DA..NAIF.LA
+H ME.WHISKEYS..ES
+I O...P..U..T..T.
+J N...U..F..E..T.
+K O...R..I..Z..R.
+L BALISTIQUE...E.
+M L.....LUSTREUR.
+N O......E.....A.
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: EMBARDAS at 15A [89 pts] [BINGO]
+Move 10: BALISTIQUE at L1 [88 pts] [BINGO]
+Move 11: EGALERAI at 6A [81 pts] [BINGO]
+Move 12: LUSTREUR at M7 [78 pts] [BINGO]
+Move 13: LETTRERA at 14G [74 pts] [BINGO]
+Move 14: ANoNNEE at 2B [69 pts] [BINGO]
+Move 15: NaIF at G9 [20 pts]
+Move 16: NU at B9 [12 pts]

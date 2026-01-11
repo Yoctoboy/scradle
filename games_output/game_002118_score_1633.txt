@@ -1,0 +1,41 @@
+=== Game #2118 ===
+Total Score: 1633
+Move Count: 16
+Bingo Count: 14
+
+Final Board:
+  123456789012345
+A U....S.DEPAVAGE
+B RE...U.....O..L
+C ETALERENT..M..I
+D .E...S.....I..G
+E .N..JE....ET..I
+F .D..OM....XI..B
+G .R..DA..NAIF..L
+H MA.WHISKEYS..NE
+I O...P..U..T..A.
+J N...U..F..E..R.
+K O...R..I..Z..R.
+L BALISTIQUE...A.
+M L......U.....N.
+N O......E.....T.
+O COCHEVIS.......
+
+
+Move History:
+Move 1: WHISKEY at H4 [144 pts] [BINGO]
+Move 2: EXISTEZ at 11E [188 pts] [BINGO]
+Move 3: KUFIQUES at 8H [155 pts] [BINGO]
+Move 4: JODHPURS at 5E [134 pts] [BINGO]
+Move 5: COCHEVIS at O1 [116 pts] [BINGO]
+Move 6: VOMITIF at 12A [104 pts] [BINGO]
+Move 7: DEPAVAGE at A8 [185 pts] [BINGO]
+Move 8: MONOBLOC at 1H [98 pts] [BINGO]
+Move 9: ELIGIBLE at 15A [89 pts] [BINGO]
+Move 10: BALiSTiQUE at L1 [84 pts] [BINGO]
+Move 11: SURSEMAI at 6A [84 pts] [BINGO]
+Move 12: ETENDRA at 2B [77 pts] [BINGO]
+Move 13: ETALERENT at C1 [72 pts] [BINGO]
+Move 14: NARRANT at 14H [70 pts] [BINGO]
+Move 15: NAIF at G9 [22 pts]
+Move 16: URE at 1A [11 pts]
